@@ -1,0 +1,12 @@
+*~
+*.o
+*.jpg
+*.png
+*.tar.gz
+*.txt
+*.txt.new
+programs/satscaler/DevIL
+programs/satscaler/include
+programs/satscaler/lib
+programs/satscaler/man
+programs/satscaler/http-fetcher

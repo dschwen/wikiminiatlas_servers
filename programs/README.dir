@@ -1,0 +1,2 @@
+for n in `seq 0 15`; do let deg=-n\*22.5+90; ./direction.pl $deg > dir.svg; ksvgtopng4 15 15 dir.svg dir_$n.png; done
+
