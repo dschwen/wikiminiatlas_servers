@@ -283,6 +283,7 @@ while( @row = $sth->fetchrow() )
       { 
         $title2 = $1; 
         $title2 =~ s/\+/ /g;
+        $title2 =~ s/%0A.*//g; #remove crap after linebreak
         $title2 = uri_unescape($title2);
         if( $title2 ne $title ) { $psize = 0; }
         #$psize = 0;
