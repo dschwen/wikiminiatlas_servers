@@ -21,7 +21,7 @@
  *
  ************************************************************************/
 
-/// defaults
+// defaults
 var wikiminiatlas_coordinate_region = '';
 var wikiminiatlas_width = 500;
 var wikiminiatlas_height = 300;
@@ -1217,8 +1217,8 @@ function wikiminiatlasInstall()
   document.body.oncontextmenu = function() { return false; };
   document.onkeydown = wmaKeypress;
 
-  wikiminiatlas_old_onmouseup = document.onmouseup;
-  wikiminiatlas_old_onmousemove = document.onmousemove;
+  wikiminiatlas_old_onmouseup = document.onmouseup || null;
+  wikiminiatlas_old_onmousemove = document.onmousemove || null;
 
   initializeWikiMiniAtlasMap();
   moveWikiMiniAtlasMapTo();
