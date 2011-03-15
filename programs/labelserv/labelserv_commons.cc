@@ -144,7 +144,7 @@ int main()
 
 // Adapted from http://www-128.ibm.com/developerworks/eserver/library/es-nweb.html
 
-void log(int type, char *s1, char *s2, int num)
+void log(int type, const char *s1, const char *s2, int num)
 {
     int fd ;
     char logbuffer[1024];

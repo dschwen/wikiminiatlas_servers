@@ -414,9 +414,9 @@ main(int argc, char **argv)
 
   if( argc < 2  || argc > 2 || !strcmp(argv[1], "-?") ) 
   {
-    (void)printf("hint: tileserv Port-Number\n\n"
-                 "\ttileserv is a small and very safe mini coordinate web server\nfor the WikiMiniAtlas.\n"
-                 "\tExample: tileserv 8181 &\n\n");
+    (void)printf( "hint: %s Port-Number\n\n"
+                  "\ttileserv is a small and very safe mini coordinate web server\nfor the WikiMiniAtlas.\n"
+                  "\tExample: %s 8181 &\n\n", argv[0], argv[0] );
     exit(0);
   }
 
@@ -438,7 +438,7 @@ main(int argc, char **argv)
   ffdb = fopen( "wp_coord.ffdb.2", "w" );
 
   // Read table of supported languages
-  const char *lfname = "/home/dschwen/wma_rewrite.txt";
+  const char *lfname = "wma_rewrite.txt";
   FILE *langfile = fopen( lfname, "rt" );
   if( langfile == NULL )
   {
