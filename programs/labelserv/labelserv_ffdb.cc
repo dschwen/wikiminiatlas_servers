@@ -56,7 +56,8 @@ const int nlang_max = 22;
 //char languages[][nlang] = { "de", "en", "ja", "pl", "pt", "nl", "it", "fr", "is", "ca", "no", "es", "ru", "eo", "hu", "sv", "lt", "eu", "ko", "el"};
 char *languages[nlang_max];
 
-// Flat file database handle
+// Flat file database filename and handle
+char ffdbname[1000];
 FILE *ffdb;
 
 
@@ -339,10 +340,9 @@ printf(" looking up %d %d %d in %d\n", y, x, z, lang );
   }
   else
   {
-    FILE *rffdb = fopen( "wp_coord.ffdb.2", "r" );
+    FILE *rffdb = fopen( ffdbname, "r" );
     unsigned char n1, n2;
     char name[256];
-    //char *realname = name;
     char *realname;
 
     float lat, lon;
@@ -410,6 +410,12 @@ main(int argc, char **argv)
   char *str;
   char buf[1000];
 
+  // get hostname and use it to construct database filename
+  buf[999] = '\0';
+  gethostname( buf, 999);
+  ffdbname[999] = '\0';
+  snprintf( ffdbname, 999, "wp_coord.ffdb.%s", buf );
+
   int by,bx;
 
   if( argc < 2  || argc > 2 || !strcmp(argv[1], "-?") ) 
@@ -435,7 +441,7 @@ main(int argc, char **argv)
   icon_off_x[8]=5; icon_off_y[8]=5; // standard
   icon_off_x[9]=6; icon_off_y[9]=6; // standard
   icon_off_x[10]=6; icon_off_y[10]=6; // event    
-  ffdb = fopen( "wp_coord.ffdb.2", "w" );
+  ffdb = fopen( ffdbname, "w" );
 
   // Read table of supported languages
   const char *lfname = "wma_rewrite.txt";
