@@ -10,3 +10,5 @@ programs/satscaler/include
 programs/satscaler/lib
 programs/satscaler/man
 programs/satscaler/http-fetcher
+programs/labelserv/labelserv_commons
+programs/labelserv/labelserv_ffdb
