@@ -53,9 +53,6 @@ $db = DBI->connect( $dsn, $login_ds, $pass_ds,
                   { PrintError => 0}) || die $DBI::errstr;
 
 $geohackurl = 'http://toolserver.org/~geohack/geohack.php?';
-if( $lang eq 'nl' ) {
-    $geohackurl = 'http://www.nsesoftware.nl/wiki/maps.asp?';
-}
 
 $query = "select /* SLOW_OK */ page_title, COUNT(*) as coords from externallinks, page where page_namespace = 0 and el_from = page_id and el_to like '".$geohackurl."%' and not el_to like '%&title=%' group by page_title having coords > 5 order by coords desc";
 
