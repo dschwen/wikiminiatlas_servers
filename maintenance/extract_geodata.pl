@@ -99,9 +99,6 @@ $country = "Democratic Republic of the Congo";
 );
 
 $geohackurl = 'http://toolserver.org/~geohack/geohack.php?';
-if( $lang eq 'nl' ) { 
-    $geohackurl = 'http://www.nsesoftware.nl/wiki/maps.asp?'; 
-}
 
 $start = time();
 
