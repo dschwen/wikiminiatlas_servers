@@ -46,6 +46,8 @@ my $db = DBI->connect(
   "DBI:mysql:database=$database;host=$host;mysql_read_default_file=" . getpwuid($<)->dir . "/.my.cnf",
   undef, undef) or die "Error: $DBI::err, $DBI::errstr";
 
+print "Connected.\n";
+
 #$blacklist['en'] = "List of |History of |Geography of |Latitude and longitude of cities|Former toponyms of places in |Second Happy Time|Finnish exonyms for places in |Abbeys and priories in England|Wide Area Augmentation System|Australian places named by ";
 
 $usstates = "Alabama|Alaska|Arizona|Arkansas|California|Colorado|Connecticut|Delaware|Florida|Georgia|Hawaii|Idaho|Illinois|Indiana|Iowa|Kansas|Kentucky|Louisiana|Maine|Maryland|Massachusetts|Michigan|Minnesota|Mississippi|Missouri|Montana|Nebraska|Nevada|New Hampshire|New Jersey|New Mexico|New York|North Carolina|North Dakota|Ohio|Oklahoma|Oregon|Pennsylvania|Rhode Island|South Carolina|South Dakota|Tennessee|Texas|Utah|Vermont|Virginia|Washington|West Virginia|Wisconsin|Wyoming";
@@ -55,7 +57,8 @@ $country = "Democratic Republic of the Congo";
 
 $start = time();
 
-$query = "SELECT /* SLOW_OK */ page_title, gc_lat, gc_lon, gc_head, page_len, gc_type, gc_size, gc_name  from page, u_dispenser_p.coord_commonswiki page_namespace=0 and gc_from = page_id and ( gc_globe ='' or gc_globe = 'earth')"; 
+$query = "SELECT /* SLOW_OK */ page_title, gc_lat, gc_lon, gc_head, page_len, gc_type, gc_size, gc_name FROM page, u_dispenser_p.coord_".$lang."wiki WHERE page_namespace=0 AND gc_from = page_id AND ( gc_globe ='' or gc_globe = 'earth')"; 
+
 @bl = split( /\|/, $blacklist[$lang] );
 
 print STDERR "Starting query.\n";
@@ -72,6 +75,7 @@ while( @row = $sth->fetchrow() )
 {
   ( $title, $lat, $lon, $head, $psize, $type, $pop, $name ) = @row[0..7];
   $url = $title;
+  $pop = int($pop);
   $title =~ s/_/ /g;
 
   switch(lc($type))
@@ -99,7 +103,7 @@ while( @row = $sth->fetchrow() )
   # explicit title given?
   if( $name ne $title ) 
   { 
-    $title2 = $title; 
+    $title2 = $name; 
     $title2 =~ s/\+/ /g;
     $title2 =~ s/%0A.*//g; #remove crap after linebreak
     $title2 = uri_unescape($title2);
