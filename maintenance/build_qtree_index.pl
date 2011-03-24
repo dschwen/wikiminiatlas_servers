@@ -41,7 +41,7 @@ print STDERR "$bln badlist entries read.\n";
 $lang = $ARGV[0] || "en";
 
 #getting language ID
-my $lang_id = -1;
+my $langid = -1;
 @all_lang = split(/,/,"ar,bg,ca,ceb,commons,cs,da,de,el,en,eo,es,et,eu,fa,fi,fr,gl,he,hi,hr,ht,hu,id,it,ja,ko,lt,ms,new,nl,nn,no,pl,pt,ro,ru,simple,sk,sl,sr,sv,sw,te,th,tr,uk,vi,vo,war,zh");
 for( $i = 0; $i<@all_lang; $i++ ) {
   $langid = $i if( lc($lang) eq lc($all_lang[$i]) );
@@ -90,7 +90,10 @@ while( @row = $sth->fetchrow() )
   next if( $bl{$title} > 1 );
 
   # calculate tile coordinates at maxzoom
+  next if( ( $lat > 90.0 ) || ( $lat < -90.0 ) );
   $y = int( ( 90.0 + $lat ) / 180.0 * ((1<<$maxzoom)*3) );
+  $lon += 360.0 if( $lon < 0 );
+  next if( ( $lon < 0.0 ) || ( $lon > 360.0 ) );
   $x = int( $lon / 360.0 * ((1<<$maxzoom)*3) * 2 );
 
   # did we already insert a tile?
