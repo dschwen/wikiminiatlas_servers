@@ -32,7 +32,7 @@ use IO::File;
 $lang = $ARGV[0] || "en";
 
 #getting language ID
-my $lang_id = -1;
+my $langid = -1;
 @all_lang = split(/,/,"ar,bg,ca,ceb,commons,cs,da,de,el,en,eo,es,et,eu,fa,fi,fr,gl,he,hi,hr,ht,hu,id,it,ja,ko,lt,ms,new,nl,nn,no,pl,pt,ro,ru,simple,sk,sl,sr,sv,sw,te,th,tr,uk,vi,vo,war,zh");
 for( $i = 0; $i<@all_lang; $i++ ) {
   $langid = $i if( lc($lang) eq lc($all_lang[$i]) );
@@ -52,6 +52,11 @@ my $db = DBI->connect(
 print "Connected.\n";
   
 $zoom = $maxzoom-1;
+
+$query = "DELETE l.* FROM wma_label l, wma_tile t WHERE l.lang_id='$langid' AND l.rev='$rev' AND t.rev='$rev' AND t.z='$zoom';";
+$sth = $db->prepare( $query );
+$rows = $sth->execute;
+print "Delete $rows labels in zoom $zoom from previous run.\n";
 
 $start = time();
 $query = "SELECT /* SLOW_OK */  FLOOR(x/2) as x2, FLOOR(y/2) as y2, t.id, l.weight, page_id FROM wma_label l, wma_tile t WHERE t.id = l.tile_id AND t.z='".($zoom+1)."' AND l.rev='$rev' AND t.rev='$rev' AND lang_id='$langid' ORDER BY x2,y2,l.weight LIMIT 20;"; 
