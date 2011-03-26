@@ -40,6 +40,13 @@ print STDERR "$bln badlist entries read.\n";
 
 $lang = $ARGV[0] || "en";
 
+
+$usstates = "Alabama|Alaska|Arizona|Arkansas|California|Colorado|Connecticut|Delaware|Florida|Georgia|Hawaii|Idaho|Illinois|Indiana|Iowa|Kansas|Kentucky|Louisiana|Maine|Maryland|Massachusetts|Michigan|Minnesota|Mississippi|Missouri|Montana|Nebraska|Nevada|New Hampshire|New Jersey|New Mexico|New York|North Carolina|North Dakota|Ohio|Oklahoma|Oregon|Pennsylvania|Rhode Island|South Carolina|South Dakota|Tennessee|Texas|Utah|Vermont|Virginia|Washington|West Virginia|Wisconsin|Wyoming";
+$auterritories = "New South Wales|Victoria|South Australia|Queensland|Western Australia|Northern Territory";
+$cdnterrprov = "Ontario|Quebec|Nova Scotia|New Brunswick|Manitoba|British Columbia|Prince Edward Island|Saskatchewan|Alberta|Newfoundland and Labrador|Northwest Territories|Yukon|Nunavut";
+$country = "Democratic Republic of the Congo";
+
+
 #getting language ID
 my $langid = -1;
 @all_lang = split(/,/,"ar,bg,ca,ceb,commons,cs,da,de,el,en,eo,es,et,eu,fa,fi,fr,gl,he,hi,hr,ht,hu,id,it,ja,ko,lt,ms,new,nl,nn,no,pl,pt,ro,ru,simple,sk,sl,sr,sv,sw,te,th,tr,uk,vi,vo,war,zh");
@@ -62,13 +69,17 @@ my $db2 = DBI->connect(
 
 print "Connected.\n";
   
-$query = "DELETE FROM wma_label WHERE rev='$rev';";
+$rev = 0;
+
+$query = "DELETE c.*, l.* FROM wma_connect c, wma_label l WHERE c.label_id = l.id AND c.rev='$rev' AND l.lang_id='$langid';";
+print "$query\n";
 $sth2 = $db2->prepare( $query );
 $rows = $sth2->execute;
-print "Delete $rows labels from previous run.\n";
+print "Delete $rows label connectors from previous run.\n";
 
 $start = time();
-$query = "SELECT /* SLOW_OK */  page_title, page_id, gc_lat, gc_lon, page_len+gc_size/20 FROM page, u_dispenser_p.coord_".$lang."wiki WHERE page_namespace=0 AND gc_from = page_id AND ( gc_globe ='' or gc_globe = 'earth')"; 
+$query = "SELECT /* SLOW_OK */ page_title, page_id, gc_lat, gc_lon, page_len, gc_size, gc_type, CASE WHEN gc_primary=1 THEN page_title ELSE gc_name 
+END FROM page, u_dispenser_p.coord_".$lang."wiki WHERE page_namespace=0 AND gc_from = page_id AND ( gc_globe ='' or gc_globe = 'earth')"; 
 
 print STDERR "Starting query.\n";
 print STDERR "$query\n";
@@ -79,13 +90,41 @@ print STDERR  $db->errstr;
 print STDERR "Query completed in in ", ( time() - $start ), " seconds.\n";
 
 $maxzoom = 13;
-$rev = 0;
+
+# lock for writing
+$query = "LOCK TABLES wma_connect WRITE, wma_label WRITE, wma_tile WRITE;";
+$sth2 = $db2->prepare( $query );
+$rows = $sth2->execute;
 
 while( @row = $sth->fetchrow() ) 
 {
-  ( $title, $pageid, $lat, $lon, $weight ) = @row[0..4];
+  ( $title, $pageid, $lat, $lon, $weight, $pop, $type, $name ) = @row[0..5];
   $pop = int($pop);
+  $weight = int($weight) + $pop/20;
+  $name =~ s/_/ /g;
 
+  switch(lc($type))
+  {
+    case "mountain"  { $style = 2; }
+    case "country"   { $style = 3; }
+    case "city"      { 
+      if($pop<1000000)  { $style = 8; }
+      if($pop<500000)   { $style = 7; }
+      if($pop<100000)   { $style = 6; }
+      if($pop<10000)    { $style = 5; }
+      if($pop>=1000000) { $style = 9; }
+    }
+    case "event"      { $style = 10; }
+    else { $style = 0; }
+  }
+
+  # take care of a few special cases
+  if    ( $name =~ /^(.*) Township, .* County, ($usstates)$/ )         { $name = "$1 Twp."; }
+  elsif ( $name =~ /^(.*) Township, ($usstates)$/ )                    { $name = "$1 Twp."; }
+  elsif ( $name =~ /^(.*), ($usstates|$auterritories|$cdnterrprov|$country)$/ ) { $name = "$1"; }
+  elsif ( $name =~ /^(.*) \(($usstates)\)$/ )                          { $name = "$1"; }
+  elsif ( $name =~ /^(.*) \(i.* County, ($usstates)\)$/ )              { $name = "$1"; }
+  
   #is the page badlisted (too many unnamed coords)
   next if( $bl{$title} > 1 );
 
@@ -110,9 +149,20 @@ while( @row = $sth->fetchrow() )
     ( $tileid ) = $sth2->fetchrow;
   }
 
-  # insert at maxzoom
-  $query = "INSERT INTO wma_label (tile_id,page_id,weight,lang_id,rev) VALUES ('$tileid','$pageid','$weight','$langid','$rev');";
+  # insert label 
+  $query = "INSERT INTO wma_label (page_id,lang_id,name,style,lat,lon,weight) VALUES ('$pageid','$langid',".($db2->quote($name)).",'$style','$lat','$lon','$weight');";
+  $sth2 = $db2->prepare( $query );
+  $rows = $sth2->execute;
+  $labelid = $db2->{ q{mysql_insertid} };
+
+  # insert connect at maxzoom
+  $query = "INSERT INTO wma_connect (tile_id,label_id,rev) VALUES ('$tileid','$labelid','$rev');";
   $sth2 = $db2->prepare( $query );
   $rows = $sth2->execute;
 }
+
+# unlock
+$query = "UNLOCK TABLES;";
+$sth2 = $db2->prepare( $query );
+$rows = $sth2->execute;
 

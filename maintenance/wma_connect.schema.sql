@@ -16,22 +16,19 @@
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 --
--- Table structure for table `wma_label`
+-- Table structure for table `wma_connect`
 --
 
-DROP TABLE IF EXISTS `wma_label`;
+DROP TABLE IF EXISTS `wma_connect`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `wma_label` (
+CREATE TABLE `wma_connect` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `page_id` int(11) DEFAULT NULL,
-  `lang_id` int(11) DEFAULT NULL,
-  `name` varchar(255) DEFAULT NULL,
-  `style` int(11) DEFAULT NULL,
-  `lat` float DEFAULT NULL,
-  `lon` float DEFAULT NULL,
-  `weight` int(11) DEFAULT NULL,
-  PRIMARY KEY (`id`)
+  `tile_id` int(11) DEFAULT NULL,
+  `label_id` int(11) DEFAULT NULL,
+  `rev` int(11) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `tile_id_index` (`tile_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 

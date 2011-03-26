@@ -55,13 +55,15 @@ for( $zoom = $maxzoom-1; $zoom >= 0; $zoom-- )
 {
   print "Zoom $zoom\n";
 
-  $query = "DELETE l.* FROM wma_label l, wma_tile t WHERE l.lang_id='$langid' AND l.rev='$rev' AND t.rev='$rev' AND t.z='$zoom';";
+  $query = "DELETE c.*, l.* FROM wma_connect c, wma_label l, wma_tile t WHERE c.label_id = l.id AND c.tile_id=t.id AND c.rev='$rev' AND l.lang_id='$langid' AND t.z='$zoom';";
+  print "$query\n";
   $sth = $db->prepare( $query );
   $rows = $sth->execute;
-  print "Delete $rows labels in zoom $zoom from previous run.\n" if( $rows > 0 );
+  print "Delete $rows labels in zoom $zoom from previous run.\n";# if( $rows > 0 );
 
   $start = time();
-  $query = "SELECT /* SLOW_OK */  FLOOR(x/2) as x2, FLOOR(y/2) as y2, t.id, l.weight, page_id FROM wma_label l, wma_tile t WHERE t.id = l.tile_id AND t.z='".($zoom+1)."' AND l.rev='$rev' AND t.rev='$rev' AND lang_id='$langid' ORDER BY x2,y2,l.weight;"; 
+  $query = "SELECT /* SLOW_OK */  FLOOR(x/2) as x2, FLOOR(y/2) as y2, c.tile_id, c.label_id FROM wma_connect c, wma_tile t, wma_label l WHERE t.id = c.tile_id AND l.id = c.label_id AND t.z='".($zoom+1)."' AND c.rev='$rev' AND t.rev='$rev' AND l.lang_id='$langid' ORDER BY t.id,l.weight;"; 
+print "$query\n";
   $sth = $db->prepare( $query );
   $sth->execute;
 
@@ -70,7 +72,7 @@ for( $zoom = $maxzoom-1; $zoom >= 0; $zoom-- )
   while( @row = $sth->fetchrow() ) 
   {
     $ntotal++;
-    ( $x, $y, $tid, $weight, $pageid ) = @row[0..4];
+    ( $x, $y, $tid, $labelid ) = @row[0..3];
     next if( $tid == $lasttid );
     $lasttid = $tid;
     $nbubble++;
@@ -90,7 +92,7 @@ for( $zoom = $maxzoom-1; $zoom >= 0; $zoom-- )
     }
 
     # insert at zoom
-    $query = "INSERT INTO wma_label (tile_id,page_id,weight,lang_id,rev) VALUES ('$tileid','$pageid','$weight','$langid','$rev');";
+    $query = "INSERT INTO wma_connect (tile_id,label_id,rev) VALUES ('$tileid','$labelid','$rev');";
     $sth2 = $db->prepare( $query );
     $rows = $sth2->execute;
   }
