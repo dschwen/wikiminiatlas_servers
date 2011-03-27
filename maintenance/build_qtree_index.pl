@@ -69,6 +69,16 @@ my $db2 = DBI->connect(
 
 print "Connected.\n";
   
+#create temporary blacklist table un u_dschwen
+$query = "CREATE temporary table blacklist (gc_from int, cpp int, cdn int, dnf float);";
+print "$query\n";
+$query = "INSERT INTO blacklist select gc_from, count(*) AS cpp, COUNT(DISTINCT gc_name) AS cdn, COUNT(DISTINCT gc_name)/count(*) as dnf from u_dispenser_p.coord_${lang}wiki c where group by gc_from having dnf<0.9 and cpp>4;";
+print "$query\n";
+exit;
+$sth2 = $db2->prepare( $query );
+$rows = $sth2->execute;
+print "Found $rows blacklisted articles.\n";
+
 $rev = 0;
 
 $query = "DELETE c.*, l.* FROM wma_connect c, wma_label l WHERE c.label_id = l.id AND c.rev='$rev' AND l.lang_id='$langid';";
@@ -93,12 +103,12 @@ $maxzoom = 13;
 
 # lock for writing
 $query = "LOCK TABLES wma_connect WRITE, wma_label WRITE, wma_tile WRITE;";
-$sth2 = $db2->prepare( $query );
-$rows = $sth2->execute;
+#$sth2 = $db2->prepare( $query );
+#$rows = $sth2->execute;
 
 while( @row = $sth->fetchrow() ) 
 {
-  ( $title, $pageid, $lat, $lon, $weight, $pop, $type, $name ) = @row[0..5];
+  ( $title, $pageid, $lat, $lon, $weight, $pop, $type, $name ) = @row[0..7];
   $pop = int($pop);
   $weight = int($weight) + $pop/20;
   $name =~ s/_/ /g;
@@ -163,6 +173,6 @@ while( @row = $sth->fetchrow() )
 
 # unlock
 $query = "UNLOCK TABLES;";
-$sth2 = $db2->prepare( $query );
-$rows = $sth2->execute;
+#$sth2 = $db2->prepare( $query );
+#$rows = $sth2->execute;
 

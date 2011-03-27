@@ -62,7 +62,7 @@ for( $zoom = $maxzoom-1; $zoom >= 0; $zoom-- )
   print "Delete $rows labels in zoom $zoom from previous run.\n";# if( $rows > 0 );
 
   $start = time();
-  $query = "SELECT /* SLOW_OK */  FLOOR(x/2) as x2, FLOOR(y/2) as y2, c.tile_id, c.label_id FROM wma_connect c, wma_tile t, wma_label l WHERE t.id = c.tile_id AND l.id = c.label_id AND t.z='".($zoom+1)."' AND c.rev='$rev' AND t.rev='$rev' AND l.lang_id='$langid' ORDER BY t.id,l.weight;"; 
+  $query = "SELECT /* SLOW_OK */  FLOOR(x/2) as x2, FLOOR(y/2) as y2, c.tile_id, c.label_id FROM wma_connect c, wma_tile t, wma_label l WHERE t.id = c.tile_id AND l.id = c.label_id AND t.z='".($zoom+1)."' AND c.rev='$rev' AND t.rev='$rev' AND l.lang_id='$langid' ORDER BY t.id,l.weight DESC;"; 
 print "$query\n";
   $sth = $db->prepare( $query );
   $sth->execute;
