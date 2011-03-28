@@ -70,14 +70,17 @@ my $db2 = DBI->connect(
 print "Connected.\n";
   
 #create temporary blacklist table un u_dschwen
-$query = "CREATE temporary table blacklist (gc_from int, cpp int, cdn int, dnf float);";
-print "$query\n";
-$query = "INSERT INTO blacklist select gc_from, count(*) AS cpp, COUNT(DISTINCT gc_name) AS cdn, COUNT(DISTINCT gc_name)/count(*) as dnf from u_dispenser_p.coord_${lang}wiki c where group by gc_from having dnf<0.9 and cpp>4;";
-print "$query\n";
-exit;
+$query = "CREATE TEMPORARY TABLE blacklist (gc_from INT, cpp INT, cdn INT, dnf FLOAT);";
+$sth2 = $db2->prepare( $query );
+$rows = $sth2->execute;
+$query = "INSERT INTO blacklist SELECT gc_from, count(*) AS cpp, COUNT(DISTINCT gc_name) AS cdn, COUNT(DISTINCT gc_name)/count(*) AS dnf FROM u_dispenser_p.coord_${lang}wiki c GROUP BY gc_from HAVING dnf<0.9 AND cpp>4;";
 $sth2 = $db2->prepare( $query );
 $rows = $sth2->execute;
 print "Found $rows blacklisted articles.\n";
+$query = "CREATE INDEX from_index ON blacklist (gc_from);";
+$sth2 = $db2->prepare( $query );
+$rows = $sth2->execute;
+print "Index created.\n";
 
 $rev = 0;
 
@@ -89,8 +92,11 @@ print "Delete $rows label connectors from previous run.\n";
 
 $start = time();
 $query = "SELECT /* SLOW_OK */ page_title, page_id, gc_lat, gc_lon, page_len, gc_size, gc_type, CASE WHEN gc_primary=1 THEN page_title ELSE gc_name 
-END FROM page, u_dispenser_p.coord_".$lang."wiki WHERE page_namespace=0 AND gc_from = page_id AND ( gc_globe ='' or gc_globe = 'earth')"; 
+END FROM page, u_dispenser_p.coord_".$lang."wiki c LEFT JOIN u_dschwen.blacklist b ON b.gc_from=c.gc_from WHERE page_namespace=0 AND c.gc_from=page_id AND ( gc_globe ='' or gc_globe = 'earth') AND b.gc_from IS NULL"; 
 
+#SELECT  page_title, page_id, gc_lat, gc_lon, page_len, gc_size, gc_type, CASE WHEN gc_primary=1 THEN page_title ELSE gc_name END FROM page, u_dispenser_p.coord_svwiki c LEFT JOIN u_dschwen.blacklist b ON b.gc_from=c.gc_from WHERE page_namespace=0 AND c.gc_from = page_id AND ( gc_globe ='' or gc_globe = 'earth') AND b.gc_from IS NOT NULL
+#
+# AND gc_lat<=90.0 AND gc_lat>=-90.0 AND 
 print STDERR "Starting query.\n";
 print STDERR "$query\n";
 print STDERR  $db->errstr;
