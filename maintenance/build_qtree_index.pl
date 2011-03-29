@@ -29,18 +29,6 @@ use Encode qw(decode);
 use Switch;
 use IO::File;
 
-$bln = 0; 
-while(<STDIN>)
-{
-    ( $coords, $title ) = split( /\|/, $_, 2 );
-    $bl{$title} = $coords;
-    $bln++;
-}
-print STDERR "$bln badlist entries read.\n";
-
-$lang = $ARGV[0] || "en";
-
-
 $usstates = "Alabama|Alaska|Arizona|Arkansas|California|Colorado|Connecticut|Delaware|Florida|Georgia|Hawaii|Idaho|Illinois|Indiana|Iowa|Kansas|Kentucky|Louisiana|Maine|Maryland|Massachusetts|Michigan|Minnesota|Mississippi|Missouri|Montana|Nebraska|Nevada|New Hampshire|New Jersey|New Mexico|New York|North Carolina|North Dakota|Ohio|Oklahoma|Oregon|Pennsylvania|Rhode Island|South Carolina|South Dakota|Tennessee|Texas|Utah|Vermont|Virginia|Washington|West Virginia|Wisconsin|Wyoming";
 $auterritories = "New South Wales|Victoria|South Australia|Queensland|Western Australia|Northern Territory";
 $cdnterrprov = "Ontario|Quebec|Nova Scotia|New Brunswick|Manitoba|British Columbia|Prince Edward Island|Saskatchewan|Alberta|Newfoundland and Labrador|Northwest Territories|Yukon|Nunavut";
@@ -48,6 +36,7 @@ $country = "Democratic Republic of the Congo";
 
 
 #getting language ID
+$lang = $ARGV[0] || "en";
 my $langid = -1;
 @all_lang = split(/,/,"ar,bg,ca,ceb,commons,cs,da,de,el,en,eo,es,et,eu,fa,fi,fr,gl,he,hi,hr,ht,hu,id,it,ja,ko,lt,ms,new,nl,nn,no,pl,pt,ro,ru,simple,sk,sl,sr,sv,sw,te,th,tr,uk,vi,vo,war,zh");
 for( $i = 0; $i<@all_lang; $i++ ) {
@@ -69,17 +58,17 @@ my $db2 = DBI->connect(
 
 print "Connected.\n";
   
-#create temporary blacklist table un u_dschwen
-$query = "CREATE TEMPORARY TABLE blacklist (gc_from INT, cpp INT, cdn INT, dnf FLOAT);";
-$sth2 = $db2->prepare( $query );
-$rows = $sth2->execute;
-$query = "INSERT INTO blacklist SELECT gc_from, count(*) AS cpp, COUNT(DISTINCT gc_name) AS cdn, COUNT(DISTINCT gc_name)/count(*) AS dnf FROM u_dispenser_p.coord_${lang}wiki c GROUP BY gc_from HAVING dnf<0.9 AND cpp>4;";
-$sth2 = $db2->prepare( $query );
-$rows = $sth2->execute;
+#create temporary blacklist table in u_dschwen
+$query = "CREATE TEMPORARY TABLE u_dschwen.blacklist (gc_from INT, cpp INT, cdn INT, dnf FLOAT);";
+$sth = $db->prepare( $query );
+$rows = $sth->execute;
+$query = "INSERT INTO u_dschwen.blacklist SELECT gc_from, count(*) AS cpp, COUNT(DISTINCT gc_name) AS cdn, COUNT(DISTINCT gc_name)/count(*) AS dnf FROM u_dispenser_p.coord_${lang}wiki c GROUP BY gc_from HAVING dnf<0.9 AND cpp>4;";
+$sth = $db->prepare( $query );
+$rows = $sth->execute;
 print "Found $rows blacklisted articles.\n";
-$query = "CREATE INDEX from_index ON blacklist (gc_from);";
-$sth2 = $db2->prepare( $query );
-$rows = $sth2->execute;
+$query = "CREATE INDEX from_index ON u_dschwen.blacklist (gc_from);";
+$sth = $db->prepare( $query );
+$rows = $sth->execute;
 print "Index created.\n";
 
 $rev = 0;
@@ -91,12 +80,17 @@ $rows = $sth2->execute;
 print "Delete $rows label connectors from previous run.\n";
 
 $start = time();
-$query = "SELECT /* SLOW_OK */ page_title, page_id, gc_lat, gc_lon, page_len, gc_size, gc_type, CASE WHEN gc_primary=1 THEN page_title ELSE gc_name 
-END FROM page, u_dispenser_p.coord_".$lang."wiki c LEFT JOIN u_dschwen.blacklist b ON b.gc_from=c.gc_from WHERE page_namespace=0 AND c.gc_from=page_id AND ( gc_globe ='' or gc_globe = 'earth') AND b.gc_from IS NULL"; 
-
-#SELECT  page_title, page_id, gc_lat, gc_lon, page_len, gc_size, gc_type, CASE WHEN gc_primary=1 THEN page_title ELSE gc_name END FROM page, u_dispenser_p.coord_svwiki c LEFT JOIN u_dschwen.blacklist b ON b.gc_from=c.gc_from WHERE page_namespace=0 AND c.gc_from = page_id AND ( gc_globe ='' or gc_globe = 'earth') AND b.gc_from IS NOT NULL
-#
-# AND gc_lat<=90.0 AND gc_lat>=-90.0 AND 
+$query = <<QEND
+  SELECT /* SLOW_OK */ 
+    page_title, page_id, gc_lat, gc_lon, page_len, gc_size, gc_type, 
+    CASE WHEN gc_primary=1 THEN page_title ELSE gc_name END 
+  FROM page, u_dispenser_p.coord_${lang}wiki c 
+    LEFT JOIN u_dschwen.blacklist b ON b.gc_from=c.gc_from 
+    WHERE page_namespace=0 AND c.gc_from=page_id AND ( gc_globe ='' or gc_globe = 'earth') 
+      AND gc_lat<=90.0 AND gc_lat>=-90.0
+      AND b.gc_from IS NULL;
+QEND
+;
 print STDERR "Starting query.\n";
 print STDERR "$query\n";
 print STDERR  $db->errstr;
@@ -106,11 +100,6 @@ print STDERR  $db->errstr;
 print STDERR "Query completed in in ", ( time() - $start ), " seconds.\n";
 
 $maxzoom = 13;
-
-# lock for writing
-$query = "LOCK TABLES wma_connect WRITE, wma_label WRITE, wma_tile WRITE;";
-#$sth2 = $db2->prepare( $query );
-#$rows = $sth2->execute;
 
 while( @row = $sth->fetchrow() ) 
 {
@@ -145,7 +134,6 @@ while( @row = $sth->fetchrow() )
   next if( $bl{$title} > 1 );
 
   # calculate tile coordinates at maxzoom
-  next if( ( $lat > 90.0 ) || ( $lat < -90.0 ) );
   $y = int( ( 90.0 + $lat ) / 180.0 * ((1<<$maxzoom)*3) );
   $lon += 360.0 if( $lon < 0 );
   next if( ( $lon < 0.0 ) || ( $lon > 360.0 ) );
@@ -156,7 +144,9 @@ while( @row = $sth->fetchrow() )
   $sth2 = $db2->prepare( $query );
   $rows = $sth2->execute;
   if( $rows == 0 ) {
-    $query = "INSERT INTO wma_tile (x,y,z,rev) VALUES ('$x','$y','$maxzoom','$rev');";
+    $xh=int($x/2);
+    $yh=int($y/2);
+    $query = "INSERT INTO wma_tile (x,y,z,rev,xh,yh) VALUES ('$x','$y','$maxzoom','$rev','$xh','$yh');";
     $sth2 = $db2->prepare( $query );
     $rows = $sth2->execute;
     $tileid = $db2->{ q{mysql_insertid} };
@@ -176,9 +166,3 @@ while( @row = $sth->fetchrow() )
   $sth2 = $db2->prepare( $query );
   $rows = $sth2->execute;
 }
-
-# unlock
-$query = "UNLOCK TABLES;";
-#$sth2 = $db2->prepare( $query );
-#$rows = $sth2->execute;
-

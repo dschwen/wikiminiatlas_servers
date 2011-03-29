@@ -62,8 +62,29 @@ for( $zoom = $maxzoom-1; $zoom >= 0; $zoom-- )
   print "Delete $rows labels in zoom $zoom from previous run.\n";# if( $rows > 0 );
 
   $start = time();
-  $query = "SELECT /* SLOW_OK */  FLOOR(x/2) as x2, FLOOR(y/2) as y2, c.tile_id, c.label_id FROM wma_connect c, wma_tile t, wma_label l WHERE t.id = c.tile_id AND l.id = c.label_id AND t.z='".($zoom+1)."' AND c.rev='$rev' AND t.rev='$rev' AND l.lang_id='$langid' ORDER BY t.id,l.weight DESC;"; 
-print "$query\n";
+  print "Insert missing tile entries.\n";
+  $query = <<"  QEND"
+    INSERT INTO wma_tile (x,y,z,rev) /* SLOW_OK */
+      SELECT DISTINCT  FLOOR(t.x/2) AS x, FLOOR(t.y/2) AS y, $zoom AS z, $rev as rev 
+        FROM wma_tile t LEFT JOIN wma_tile t2 
+          ON ( t2.x=FLOOR(t.x/2) AND t2.y=FLOOR( t.y/2) AND t2.z=$zoom AND t2.rev='$rev' ) 
+        WHERE t.z=".($zoom+1)." AND t.rev='$rev' AND t2.id IS NULL;
+  QEND
+  ;
+  print "$query\n";
+  $sth = $db->prepare( $query );
+  $sth->execute;
+
+  $query = <<"  QEND"
+    SELECT /* SLOW_OK */ FLOOR(t.x/2) as x2, FLOOR(t.y/2) as y2, c.tile_id, c.label_id, t2.id 
+      FROM wma_connect c, wma_label l, wma_tile t, wma_tile t2 
+      WHERE t.id = c.tile_id AND l.id = c.label_id AND t.z='".($zoom+1)."' AND c.rev='$rev' AND 
+            t.rev='$rev' AND l.lang_id='$langid' AND
+            t2.z='$zoom' AND t2.x=FLOOR(t.x/2) AND t2.y=FLOOR(t.y/2) 
+      ORDER BY t.id,l.weight DESC;
+  QEND
+  ;
+  print "$query\n";
   $sth = $db->prepare( $query );
   $sth->execute;
 
@@ -72,24 +93,10 @@ print "$query\n";
   while( @row = $sth->fetchrow() ) 
   {
     $ntotal++;
-    ( $x, $y, $tid, $labelid ) = @row[0..3];
+    ( $x, $y, $tid, $labelid, $tileid ) = @row[0..3];
     next if( $tid == $lasttid );
     $lasttid = $tid;
     $nbubble++;
-
-    # did we already insert a tile?
-    $query = "SELECT id FROM wma_tile WHERE z='$zoom' AND x='$x' AND y='$y' AND rev='$rev';";
-    $sth2 = $db->prepare( $query );
-    $rows = $sth2->execute;
-    if( $rows == 0 ) {
-      $query = "INSERT INTO wma_tile (x,y,z,rev) VALUES ('$x','$y','$zoom','$rev');";
-      $sth2 = $db->prepare( $query );
-      $rows = $sth2->execute;
-      $tileid = $db->{ q{mysql_insertid} };
-    } else {
-      die "ambiguous tile" if( $rows > 1 );
-      ( $tileid ) = $sth2->fetchrow;
-    }
 
     # insert at zoom
     $query = "INSERT INTO wma_connect (tile_id,label_id,rev) VALUES ('$tileid','$labelid','$rev');";

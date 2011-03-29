@@ -28,10 +28,14 @@ CREATE TABLE `wma_tile` (
   `y` int(11) DEFAULT NULL,
   `z` int(11) DEFAULT NULL,
   `rev` int(11) DEFAULT NULL,
+  `xh` int(11) DEFAULT NULL,
+  `yh` int(11) DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `z_index` (`z`),
   KEY `x_index` (`x`),
   KEY `y_index` (`y`),
+  KEY `xh_index` (`xh`),
+  KEY `yh_index` (`yh`),
   KEY `id_index` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
