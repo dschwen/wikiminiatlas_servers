@@ -54,8 +54,9 @@ print "Connected.\n";
 for( $zoom = $maxzoom-1; $zoom >= 0; $zoom-- ) 
 {
   print "Zoom $zoom\n";
+  $zoompo = $zoom +1;
 
-  $query = "DELETE c.*, l.* FROM wma_connect c, wma_label l, wma_tile t WHERE c.label_id = l.id AND c.tile_id=t.id AND c.rev='$rev' AND l.lang_id='$langid' AND t.z='$zoom';";
+  $query = "DELETE c.* FROM wma_connect c, wma_label l, wma_tile t WHERE c.label_id = l.id AND c.tile_id=t.id AND c.rev='$rev' AND l.lang_id='$langid' AND t.z='$zoom';";
   print "$query\n";
   $sth = $db->prepare( $query );
   $rows = $sth->execute;
@@ -64,11 +65,11 @@ for( $zoom = $maxzoom-1; $zoom >= 0; $zoom-- )
   $start = time();
   print "Insert missing tile entries.\n";
   $query = <<"  QEND"
-    INSERT INTO wma_tile (x,y,z,rev) /* SLOW_OK */
-      SELECT DISTINCT  FLOOR(t.x/2) AS x, FLOOR(t.y/2) AS y, $zoom AS z, $rev as rev 
+    INSERT INTO wma_tile (x,y,z,rev,xh,yh) /* SLOW_OK */
+      SELECT DISTINCT  t.xh, t.yh, '$zoom', '$rev', FLOOR(t.xh/2), FLOOR(t.yh/2)
         FROM wma_tile t LEFT JOIN wma_tile t2 
-          ON ( t2.x=FLOOR(t.x/2) AND t2.y=FLOOR( t.y/2) AND t2.z=$zoom AND t2.rev='$rev' ) 
-        WHERE t.z=".($zoom+1)." AND t.rev='$rev' AND t2.id IS NULL;
+          ON ( t2.x=t.xh AND t2.y=t.yh AND t2.z=$zoom AND t2.rev='$rev' ) 
+        WHERE t.z='$zoompo' AND t.rev='$rev' AND t2.id IS NULL;
   QEND
   ;
   print "$query\n";
@@ -76,11 +77,11 @@ for( $zoom = $maxzoom-1; $zoom >= 0; $zoom-- )
   $sth->execute;
 
   $query = <<"  QEND"
-    SELECT /* SLOW_OK */ FLOOR(t.x/2) as x2, FLOOR(t.y/2) as y2, c.tile_id, c.label_id, t2.id 
+    SELECT /* SLOW_OK */ c.tile_id, c.label_id, t2.id 
       FROM wma_connect c, wma_label l, wma_tile t, wma_tile t2 
-      WHERE t.id = c.tile_id AND l.id = c.label_id AND t.z='".($zoom+1)."' AND c.rev='$rev' AND 
+      WHERE t.id = c.tile_id AND l.id = c.label_id AND t.z='$zoompo' AND c.rev='$rev' AND 
             t.rev='$rev' AND l.lang_id='$langid' AND
-            t2.z='$zoom' AND t2.x=FLOOR(t.x/2) AND t2.y=FLOOR(t.y/2) 
+            t2.z='$zoom' AND t2.x=t.xh AND t2.y=t.yh AND t2.rev='$rev'
       ORDER BY t.id,l.weight DESC;
   QEND
   ;
@@ -90,16 +91,28 @@ for( $zoom = $maxzoom-1; $zoom >= 0; $zoom-- )
 
   $lasttid = -1;
   $nbubble = 0; $ntotal = 0;
+  undef @insert;
   while( @row = $sth->fetchrow() ) 
   {
     $ntotal++;
-    ( $x, $y, $tid, $labelid, $tileid ) = @row[0..3];
+    ( $tid, $labelid, $tileid ) = @row[0..2];
     next if( $tid == $lasttid );
     $lasttid = $tid;
     $nbubble++;
 
     # insert at zoom
     $query = "INSERT INTO wma_connect (tile_id,label_id,rev) VALUES ('$tileid','$labelid','$rev');";
+    push(@insert,"('$tileid','$labelid','$rev')");
+    if( scalar(@insert) >= 100 ) {
+      $query = "INSERT INTO wma_connect (tile_id,label_id,rev) VALUES " . join(',',@insert) . ";";
+      $sth2 = $db->prepare( $query );
+      $rows = $sth2->execute;
+      undef @insert;
+    }
+  }
+
+  if( scalar(@insert) > 0 ) {
+    $query = "INSERT INTO wma_connect (tile_id,label_id,rev) VALUES " . join(',',@insert) . ";";
     $sth2 = $db->prepare( $query );
     $rows = $sth2->execute;
   }
