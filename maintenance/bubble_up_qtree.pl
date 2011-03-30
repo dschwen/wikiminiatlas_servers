@@ -56,36 +56,40 @@ for( $zoom = $maxzoom-1; $zoom >= 0; $zoom-- )
   print "Zoom $zoom\n";
   $zoompo = $zoom +1;
 
-  $query = "DELETE c.* FROM wma_connect c, wma_label l, wma_tile t WHERE c.label_id = l.id AND c.tile_id=t.id AND c.rev='$rev' AND l.lang_id='$langid' AND t.z='$zoom';";
-  print "$query\n";
-  $sth = $db->prepare( $query );
-  $rows = $sth->execute;
-  print "Delete $rows labels in zoom $zoom from previous run.\n";# if( $rows > 0 );
-
-  $start = time();
-  print "Insert missing tile entries.\n";
   $query = <<"  QEND"
-    INSERT INTO wma_tile (x,y,z,rev,xh,yh) /* SLOW_OK */
-      SELECT DISTINCT  t.xh, t.yh, '$zoom', '$rev', FLOOR(t.xh/2), FLOOR(t.yh/2)
-        FROM wma_tile t LEFT JOIN wma_tile t2 
-          ON ( t2.x=t.xh AND t2.y=t.yh AND t2.z=$zoom AND t2.rev='$rev' ) 
-        WHERE t.z='$zoompo' AND t.rev='$rev' AND t2.id IS NULL;
+    DELETE c.* FROM wma_connect c, wma_label l, wma_tile t 
+      WHERE c.label_id = l.id AND c.tile_id=t.id AND c.rev='$rev' 
+        AND l.lang_id='$langid' AND t.z='$zoom';
   QEND
   ;
-  print "$query\n";
+  #print "$query\n";
   $sth = $db->prepare( $query );
-  $sth->execute;
+  $rows = $sth->execute;
+  print "Delete $rows connectors in zoom $zoom from previous run.\n" if( $rows > 0 );
+
+  $start = time();
+  $query = <<"  QEND"
+    INSERT INTO wma_tile (x,y,z,xh,yh) /* SLOW_OK */
+      SELECT DISTINCT  t.xh, t.yh, '$zoom', FLOOR(t.xh/2), FLOOR(t.yh/2)
+        FROM wma_tile t LEFT JOIN wma_tile t2 
+          ON ( t2.x=t.xh AND t2.y=t.yh AND t2.z=$zoom ) 
+        WHERE t.z='$zoompo' AND t2.id IS NULL;
+  QEND
+  ;
+  #print "$query\n";
+  $sth = $db->prepare( $query );
+  $rows = $sth->execute;
+  print "Inserted $rows missing tile entries.\n" if( $rows > 0 );
 
   $query = <<"  QEND"
     SELECT /* SLOW_OK */ c.tile_id, c.label_id, t2.id 
       FROM wma_connect c, wma_label l, wma_tile t, wma_tile t2 
       WHERE t.id = c.tile_id AND l.id = c.label_id AND t.z='$zoompo' AND c.rev='$rev' AND 
-            t.rev='$rev' AND l.lang_id='$langid' AND
-            t2.z='$zoom' AND t2.x=t.xh AND t2.y=t.yh AND t2.rev='$rev'
+            l.lang_id='$langid' AND t2.z='$zoom' AND t2.x=t.xh AND t2.y=t.yh
       ORDER BY t.id,l.weight DESC;
   QEND
   ;
-  print "$query\n";
+  #print "$query\n";
   $sth = $db->prepare( $query );
   $sth->execute;
 

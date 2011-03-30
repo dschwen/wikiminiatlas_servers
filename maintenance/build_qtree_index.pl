@@ -91,6 +91,7 @@ $query = <<QEND
       AND b.gc_from IS NULL;
 QEND
 ;
+#select gc_lon-FLOOR(gc_lon/360)*360, gc_lon from u_dispenser_p.coord_enwiki limit 10;
 print STDERR "Starting query.\n";
 print STDERR "$query\n";
 print STDERR  $db->errstr;
@@ -140,13 +141,13 @@ while( @row = $sth->fetchrow() )
   $x = int( $lon / 360.0 * ((1<<$maxzoom)*3) * 2 );
 
   # did we already insert a tile?
-  $query = "SELECT id FROM wma_tile WHERE z='$maxzoom' AND x='$x' AND y='$y' AND rev='$rev';";
+  $query = "SELECT id FROM wma_tile WHERE z='$maxzoom' AND x='$x' AND y='$y';";
   $sth2 = $db2->prepare( $query );
   $rows = $sth2->execute;
   if( $rows == 0 ) {
     $xh=int($x/2);
     $yh=int($y/2);
-    $query = "INSERT INTO wma_tile (x,y,z,rev,xh,yh) VALUES ('$x','$y','$maxzoom','$rev','$xh','$yh');";
+    $query = "INSERT INTO wma_tile (x,y,z,xh,yh) VALUES ('$x','$y','$maxzoom','$xh','$yh');";
     $sth2 = $db2->prepare( $query );
     $rows = $sth2->execute;
     $tileid = $db2->{ q{mysql_insertid} };

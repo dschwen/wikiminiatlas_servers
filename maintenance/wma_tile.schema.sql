@@ -27,7 +27,6 @@ CREATE TABLE `wma_tile` (
   `x` int(11) DEFAULT NULL,
   `y` int(11) DEFAULT NULL,
   `z` int(11) DEFAULT NULL,
-  `rev` int(11) DEFAULT NULL,
   `xh` int(11) DEFAULT NULL,
   `yh` int(11) DEFAULT NULL,
   PRIMARY KEY (`id`),
@@ -35,8 +34,7 @@ CREATE TABLE `wma_tile` (
   KEY `x_index` (`x`),
   KEY `y_index` (`y`),
   KEY `xh_index` (`xh`),
-  KEY `yh_index` (`yh`),
-  KEY `id_index` (`id`)
+  KEY `yh_index` (`yh`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
