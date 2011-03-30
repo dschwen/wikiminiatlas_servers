@@ -72,6 +72,7 @@ $rows = $sth->execute;
 print "Index created.\n";
 
 $rev = 0;
+$maxzoom = 13;
 
 $query = "DELETE c.*, l.* FROM wma_connect c, wma_label l WHERE c.label_id = l.id AND c.rev='$rev' AND l.lang_id='$langid';";
 print "$query\n";
@@ -80,12 +81,15 @@ $rows = $sth2->execute;
 print "Delete $rows label connectors from previous run.\n";
 
 $start = time();
+$fac = ((1<<$maxzoom)*3)/180.0;
 $query = <<QEND
   SELECT /* SLOW_OK */ 
-    page_title, page_id, gc_lat, gc_lon, page_len, gc_size, gc_type, 
-    CASE WHEN gc_primary=1 THEN page_title ELSE gc_name END 
+    page_title, page_id, gc_lat, gc_lon, page_len, gc_size, gc_type,
+    CASE WHEN gc_primary=1 THEN page_title ELSE gc_name END, t.id
   FROM page, u_dispenser_p.coord_${lang}wiki c 
-    LEFT JOIN u_dschwen.blacklist b ON b.gc_from=c.gc_from 
+    LEFT JOIN u_dschwen.blacklist b ON b.gc_from=c.gc_from
+    LEFt JOIN u_dschwen.wma_tile t ON t.z=$maxzoom 
+      AND t.x=FLOOR( (gc_lon-FLOOR(gc_lon/360)*360) * $fac ) AND t.y=FLOOR( (gc_lat+90.0) * $fac )
     WHERE page_namespace=0 AND c.gc_from=page_id AND ( gc_globe ='' or gc_globe = 'earth') 
       AND gc_lat<=90.0 AND gc_lat>=-90.0
       AND b.gc_from IS NULL;
@@ -100,11 +104,9 @@ $sth->execute;
 print STDERR  $db->errstr;
 print STDERR "Query completed in in ", ( time() - $start ), " seconds.\n";
 
-$maxzoom = 13;
-
 while( @row = $sth->fetchrow() ) 
 {
-  ( $title, $pageid, $lat, $lon, $weight, $pop, $type, $name ) = @row[0..7];
+  ( $title, $pageid, $lat, $lon, $weight, $pop, $type, $name, $tileid ) = @row[0..8];
   $pop = int($pop);
   $weight = int($weight) + $pop/20;
   $name =~ s/_/ /g;
@@ -141,20 +143,14 @@ while( @row = $sth->fetchrow() )
   $x = int( $lon / 360.0 * ((1<<$maxzoom)*3) * 2 );
 
   # did we already insert a tile?
-  $query = "SELECT id FROM wma_tile WHERE z='$maxzoom' AND x='$x' AND y='$y';";
-  $sth2 = $db2->prepare( $query );
-  $rows = $sth2->execute;
-  if( $rows == 0 ) {
+  if( $tileid == 0 ) {
     $xh=int($x/2);
     $yh=int($y/2);
     $query = "INSERT INTO wma_tile (x,y,z,xh,yh) VALUES ('$x','$y','$maxzoom','$xh','$yh');";
     $sth2 = $db2->prepare( $query );
     $rows = $sth2->execute;
     $tileid = $db2->{ q{mysql_insertid} };
-  } else {
-    die "ambiguous tile" if( $rows > 1 );
-    ( $tileid ) = $sth2->fetchrow;
-  }
+  } 
 
   # insert label 
   $query = "INSERT INTO wma_label (page_id,lang_id,name,style,lat,lon,weight) VALUES ('$pageid','$langid',".($db2->quote($name)).",'$style','$lat','$lon','$weight');";
