@@ -53,7 +53,7 @@ my $db = DBI->connect(
 
 my $userdatabase = "u_dschwen";
 my $db2 = DBI->connect(
-  "DBI:mysql:database=$userdatabase;host=$host;mysql_read_default_file=" . getpwuid($<)->dir . "/.my.cnf",
+  "DBI:mysql:database=$userdatabase;host=$host;mysql_multi_statements=1;mysql_read_default_file=" . getpwuid($<)->dir . "/.my.cnf",
   undef, undef) or die "Error: $DBI::err, $DBI::errstr";
 
 print "Connected.\n";
@@ -75,10 +75,9 @@ $rev = 0;
 $maxzoom = 13;
 
 $query = "DELETE c.*, l.* FROM wma_connect c, wma_label l WHERE c.label_id = l.id AND c.rev='$rev' AND l.lang_id='$langid';";
-print "$query\n";
 $sth2 = $db2->prepare( $query );
 $rows = $sth2->execute;
-print "Delete $rows label connectors from previous run.\n";
+print "Delete $rows label connectors from previous run.\n" if( $rows > 0 );
 
 $start = time();
 $fac = ((1<<$maxzoom)*3)/180.0;
@@ -95,14 +94,12 @@ $query = <<QEND
       AND b.gc_from IS NULL;
 QEND
 ;
-#select gc_lon-FLOOR(gc_lon/360)*360, gc_lon from u_dispenser_p.coord_enwiki limit 10;
-print STDERR "Starting query.\n";
-print STDERR "$query\n";
+print "Starting query.\n";
 print STDERR  $db->errstr;
 $sth = $db->prepare( $query );
 $sth->execute;
 print STDERR  $db->errstr;
-print STDERR "Query completed in in ", ( time() - $start ), " seconds.\n";
+print "Query completed in in ", ( time() - $start ), " seconds.\n";
 
 while( @row = $sth->fetchrow() ) 
 {
@@ -152,13 +149,7 @@ while( @row = $sth->fetchrow() )
   } 
 
   # insert label 
-  $query = "INSERT INTO wma_label (page_id,lang_id,name,style,lat,lon,weight) VALUES ('$pageid','$langid',".($db2->quote($name)).",'$style','$lat','$lon','$weight');";
-  $sth2 = $db2->prepare( $query );
-  $rows = $sth2->execute;
-  $labelid = $db2->{ q{mysql_insertid} };
-
-  # insert connect at maxzoom
-  $query = "INSERT INTO wma_connect (tile_id,label_id,rev) VALUES ('$tileid','$labelid','$rev');";
+  $query = "CALL InsertLabel('$pageid','$langid',".($db2->quote($name)).",'$style','$lat','$lon','$weight','$tileid','$rev');";
   $sth2 = $db2->prepare( $query );
   $rows = $sth2->execute;
 }
