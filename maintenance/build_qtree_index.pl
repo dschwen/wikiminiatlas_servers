@@ -84,7 +84,7 @@ $fac = ((1<<$maxzoom)*3)/180.0;
 $query = <<QEND
   SELECT /* SLOW_OK */ 
     page_title, page_id, gc_lat, gc_lon, page_len, gc_size, gc_type,
-    CASE WHEN gc_primary=1 THEN page_title ELSE gc_name END, t.id
+    CASE WHEN gc_primary=1 THEN page_title ELSE gc_name END, t.id, gc_primary
   FROM page, u_dispenser_p.coord_${lang}wiki c 
     LEFT JOIN u_dschwen.blacklist b ON b.gc_from=c.gc_from
     LEFt JOIN u_dschwen.wma_tile t ON t.z=$maxzoom 
@@ -103,7 +103,7 @@ print "Query completed in in ", ( time() - $start ), " seconds.\n";
 
 while( @row = $sth->fetchrow() ) 
 {
-  ( $title, $pageid, $lat, $lon, $weight, $pop, $type, $name, $tileid ) = @row[0..8];
+  ( $title, $pageid, $lat, $lon, $weight, $pop, $type, $name, $tileid, $primary ) = @row[0..9];
   $pop = int($pop);
   $name =~ s/_/ /g;
 
@@ -130,7 +130,7 @@ while( @row = $sth->fetchrow() )
   elsif ( $name =~ /^(.*) \(i.* County, ($usstates)\)$/ )              { $name = "$1"; }
   
   # calculate final weight
-  $weight = int($weight) + $pop/20 - length($name)**2;
+  $weight = ( int($weight) + $pop/20 - length($name)**2 ) * $primary;
 
   # calculate tile coordinates at maxzoom
   $y = int( ( 90.0 + $lat ) / 180.0 * ((1<<$maxzoom)*3) );
