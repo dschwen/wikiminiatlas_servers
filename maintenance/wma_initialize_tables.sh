@@ -6,5 +6,6 @@ do
   mysql -hsql-s${c}-user.toolserver.org u_dschwen < wma_tile.schema.sql
   mysql -hsql-s${c}-user.toolserver.org u_dschwen < wma_connect.schema.sql
   mysql -hsql-s${c}-user.toolserver.org u_dschwen < wma_label.schema.sql
+  mysql -hsql-s${c}-user.toolserver.org u_dschwen < wma_storedprocedures.sql
 done
 
