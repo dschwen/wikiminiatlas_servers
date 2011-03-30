@@ -79,7 +79,7 @@ for( $zoom = $maxzoom-1; $zoom >= 0; $zoom-- )
   #print "$query\n";
   $sth = $db->prepare( $query );
   $rows = $sth->execute;
-  print "Inserted $rows missing tile entries.\n" if( $rows > 0 );
+  print " inserted $rows missing tile entries.\n" if( $rows > 0 );
 
   $query = <<"  QEND"
     SELECT /* SLOW_OK */ c.tile_id, c.label_id, t2.id 

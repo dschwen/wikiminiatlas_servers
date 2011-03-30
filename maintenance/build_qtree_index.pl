@@ -108,7 +108,6 @@ while( @row = $sth->fetchrow() )
 {
   ( $title, $pageid, $lat, $lon, $weight, $pop, $type, $name, $tileid ) = @row[0..8];
   $pop = int($pop);
-  $weight = int($weight) + $pop/20;
   $name =~ s/_/ /g;
 
   switch(lc($type))
@@ -133,8 +132,8 @@ while( @row = $sth->fetchrow() )
   elsif ( $name =~ /^(.*) \(($usstates)\)$/ )                          { $name = "$1"; }
   elsif ( $name =~ /^(.*) \(i.* County, ($usstates)\)$/ )              { $name = "$1"; }
   
-  #is the page badlisted (too many unnamed coords)
-  next if( $bl{$title} > 1 );
+  # calculate final weight
+  $weight = int($weight) + $pop/20 - length($name)**2;
 
   # calculate tile coordinates at maxzoom
   $y = int( ( 90.0 + $lat ) / 180.0 * ((1<<$maxzoom)*3) );
