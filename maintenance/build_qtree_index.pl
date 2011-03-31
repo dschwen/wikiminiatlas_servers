@@ -48,7 +48,7 @@ die "unsupported language" if( $langid < 0 );
 my $database = $lang . "wiki_p";
 my $host = $lang . "wiki-p.userdb.toolserver.org";
 my $db = DBI->connect(
-  "DBI:mysql:database=$database;host=$host;mysql_read_default_file=" . getpwuid($<)->dir . "/.my.cnf",
+  "DBI:mysql:database=$database;host=$host;mysql_use_result=0;mysql_read_default_file=" . getpwuid($<)->dir . "/.my.cnf",
   undef, undef) or die "Error: $DBI::err, $DBI::errstr";
 
 my $userdatabase = "u_dschwen";
@@ -79,11 +79,13 @@ $sth2 = $db2->prepare( $query );
 $rows = $sth2->execute;
 print "Delete $rows label connectors from previous run.\n" if( $rows > 0 );
 
+undef @insert;
+
 $start = time();
 $fac = ((1<<$maxzoom)*3)/180.0;
 $query = <<QEND
   SELECT /* SLOW_OK */ 
-    page_title, page_id, gc_lat, gc_lon, page_len, gc_size, gc_type,
+    page_id, gc_lat, gc_lon, page_len, gc_size, gc_type,
     CASE WHEN gc_primary=1 THEN page_title ELSE gc_name END, t.id, gc_primary
   FROM page, u_dispenser_p.coord_${lang}wiki c 
     LEFT JOIN u_dschwen.blacklist b ON b.gc_from=c.gc_from
@@ -97,13 +99,13 @@ QEND
 print "Starting query.\n";
 print STDERR  $db->errstr;
 $sth = $db->prepare( $query );
-$sth->execute;
+$rows = $sth->execute;
 print STDERR  $db->errstr;
-print "Query completed in in ", ( time() - $start ), " seconds.\n";
+print "Query completed in in ", ( time() - $start ), " seconds. $rows rows.\n";
 
 while( @row = $sth->fetchrow() ) 
 {
-  ( $title, $pageid, $lat, $lon, $weight, $pop, $type, $name, $tileid, $primary ) = @row[0..9];
+  ( $pageid, $lat, $lon, $weight, $pop, $type, $name, $tileid, $primary ) = @row[0..8];
   $pop = int($pop);
   $name =~ s/_/ /g;
 
@@ -148,8 +150,20 @@ while( @row = $sth->fetchrow() )
     $tileid = $db2->{ q{mysql_insertid} };
   } 
 
-  # insert label 
-  $query = "CALL InsertLabel('$pageid','$langid',".($db2->quote($name)).",'$style','$lat','$lon','$weight','$tileid','$rev');";
-  $sth2 = $db2->prepare( $query );
-  $rows = $sth2->execute;
+  # insert labels
+  push(@insert,"CALL InsertLabel('$pageid','$langid',".($db2->quote($name)).",'$style','$lat','$lon','$weight','$tileid','$rev')");
+  if( scalar(@insert) >= 10 ) {
+    $query = join(';',@insert) . ";";
+    $sth2 = $db2->prepare( $query );
+    $sth2->execute;
+    undef @insert;
+  }
 }
+
+if( scalar(@insert) > 0 ) {
+  $query = join(';',@insert) . ";";
+  $sth2 = $db2->prepare( $query );
+  $sth2->execute;
+  undef @insert;
+}
+
