@@ -109,7 +109,7 @@ for( $zoom = $maxzoom-1; $zoom >= 0; $zoom-- )
     push(@insert,"('$tileid','$labelid','$rev')");
     if( scalar(@insert) >= 100 ) {
       $query = "INSERT INTO wma_connect (tile_id,label_id,rev) VALUES " . join(',',@insert) . ";";
-      $sth2 = $db2->prepare( $query );
+      $sth2 = $db->prepare( $query );
       $rows = $sth2->execute;
       undef @insert;
     }
@@ -117,7 +117,7 @@ for( $zoom = $maxzoom-1; $zoom >= 0; $zoom-- )
 
   if( scalar(@insert) > 0 ) {
     $query = "INSERT INTO wma_connect (tile_id,label_id,rev) VALUES " . join(',',@insert) . ";";
-    $sth2 = $db2->prepare( $query );
+    $sth2 = $db->prepare( $query );
     $rows = $sth2->execute;
   }
  
