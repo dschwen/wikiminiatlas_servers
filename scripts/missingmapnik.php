@@ -72,6 +72,12 @@ if( substr($url,0,strlen($base)) == $base )
      // plausibility check; is the running process a mapniktile server?
      if( readlink( "/proc/$pid/path/cwd" ) == '/home/dschwen/public_html/wma/tiles' )
      {
+      // check if the y directory exists, otherwise create it
+      if( !is_dir( "mapnik/$z/$y" ) ) {
+        $oldumask = umask(0);
+        mkdir("mapnik/$z/$y",0755); 
+        umask($oldumask);
+      }
       $file = fopen( "/tmp/wikiminiatlas.tile" . $z . ".fifo", "w" );
       fwrite( $file, $x . " " . $y . "\n" ); 
       fclose( $file );

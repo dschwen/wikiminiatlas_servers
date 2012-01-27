@@ -33,7 +33,7 @@ $lang = $ARGV[0] || "en";
 
 #getting language ID
 my $langid = -1;
-@all_lang = split(/,/,"ar,bg,ca,ceb,commons,cs,da,de,el,en,eo,es,et,eu,fa,fi,fr,gl,he,hi,hr,ht,hu,id,it,ja,ko,lt,ms,new,nl,nn,no,pl,pt,ro,ru,simple,sk,sl,sr,sv,sw,te,th,tr,uk,vi,vo,war,zh");
+@all_lang = split(/,/,"ar,bg,ca,ceb,commons,cs,da,de,el,en,eo,es,et,eu,fa,fi,fr,gl,he,hi,hr,ht,hu,id,it,ja,ko,lt,ms,new,nl,nn,no,pl,pt,ro,ru,simple,sk,sl,sr,sv,sw,te,th,tr,uk,vi,vo,war,zh,af,als,be,bpy,fy,ga,hy,ka,ku,la,lb,lv,mk,ml,nds,nv,os,pam,pms,ta,vec");
 for( $i = 0; $i<@all_lang; $i++ ) {
   $langid = $i if( lc($lang) eq lc($all_lang[$i]) );
 }
@@ -41,7 +41,7 @@ print "langid=$langid\n";
 die "unsupported language" if( $langid < 0 );
 
 $maxzoom = 13;
-$rev = 0;
+$rev = $ARGV[1]+0;
 
 my $userdatabase = "u_dschwen";
 my $host = $lang . "wiki-p.userdb.toolserver.org";
@@ -57,7 +57,7 @@ for( $zoom = $maxzoom-1; $zoom >= 0; $zoom-- )
   $zoompo = $zoom +1;
 
   $query = <<"  QEND"
-    DELETE c.* FROM wma_connect c, wma_label l, wma_tile t 
+    DELETE /* SLOW OK */ c.* FROM wma_connect c, wma_label l, wma_tile t 
       WHERE c.label_id = l.id AND c.tile_id=t.id AND c.rev='$rev' 
         AND l.lang_id='$langid' AND t.z='$zoom';
   QEND
@@ -69,7 +69,7 @@ for( $zoom = $maxzoom-1; $zoom >= 0; $zoom-- )
 
   $start = time();
   $query = <<"  QEND"
-    INSERT INTO wma_tile (x,y,z,xh,yh) /* SLOW_OK */
+    INSERT /* SLOW OK */ INTO wma_tile (x,y,z,xh,yh) /* SLOW_OK */
       SELECT DISTINCT  t.xh, t.yh, '$zoom', FLOOR(t.xh/2), FLOOR(t.yh/2)
         FROM wma_tile t LEFT JOIN wma_tile t2 
           ON ( t2.x=t.xh AND t2.y=t.yh AND t2.z=$zoom ) 

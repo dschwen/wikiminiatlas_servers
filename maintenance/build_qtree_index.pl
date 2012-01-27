@@ -38,7 +38,7 @@ $country = "Democratic Republic of the Congo";
 #getting language ID
 $lang = $ARGV[0] || "en";
 my $langid = -1;
-@all_lang = split(/,/,"ar,bg,ca,ceb,commons,cs,da,de,el,en,eo,es,et,eu,fa,fi,fr,gl,he,hi,hr,ht,hu,id,it,ja,ko,lt,ms,new,nl,nn,no,pl,pt,ro,ru,simple,sk,sl,sr,sv,sw,te,th,tr,uk,vi,vo,war,zh");
+@all_lang = split(/,/,"ar,bg,ca,ceb,commons,cs,da,de,el,en,eo,es,et,eu,fa,fi,fr,gl,he,hi,hr,ht,hu,id,it,ja,ko,lt,ms,new,nl,nn,no,pl,pt,ro,ru,simple,sk,sl,sr,sv,sw,te,th,tr,uk,vi,vo,war,zh,af,als,be,bpy,fy,ga,hy,ka,ku,la,lb,lv,mk,ml,nds,nv,os,pam,pms,ta,vec");
 for( $i = 0; $i<@all_lang; $i++ ) {
   $langid = $i if( lc($lang) eq lc($all_lang[$i]) );
 }
@@ -62,24 +62,38 @@ print "Connected.\n";
 $query = "CREATE TEMPORARY TABLE u_dschwen.blacklist (gc_from INT, cpp INT, cdn INT, dnf FLOAT);";
 $sth = $db->prepare( $query );
 $rows = $sth->execute;
-$query = "INSERT INTO u_dschwen.blacklist SELECT gc_from, count(*) AS cpp, COUNT(DISTINCT gc_name) AS cdn, COUNT(DISTINCT gc_name)/count(*) AS dnf FROM u_dispenser_p.coord_${lang}wiki c GROUP BY gc_from HAVING dnf<0.9 AND cpp>4;";
-$sth = $db->prepare( $query );
-$rows = $sth->execute;
+$query = "INSERT /* SLOW OK */ INTO u_dschwen.blacklist SELECT gc_from, count(*) AS cpp, COUNT(DISTINCT gc_name) AS cdn, COUNT(DISTINCT gc_name)/count(*) AS dnf FROM u_dispenser_p.coord_${lang}wiki c GROUP BY gc_from HAVING dnf<0.9 AND cpp>4;";
+$sth = $db->prepare( $query ) or die;
+$rows = $sth->execute or die;
 print "Found $rows blacklisted articles.\n";
-$query = "CREATE INDEX from_index ON u_dschwen.blacklist (gc_from);";
-$sth = $db->prepare( $query );
-$rows = $sth->execute;
+$query = "CREATE INDEX /* SLOW OK */ from_index ON u_dschwen.blacklist (gc_from);";
+$sth = $db->prepare( $query ) or die;
+$rows = $sth->execute or die;
 print "Index created.\n";
 
-$rev = 0;
+$rev = $ARGV[1]+0;
 $maxzoom = 13;
 
-$query = "DELETE c.*, l.* FROM wma_connect c, wma_label l WHERE c.label_id = l.id AND c.rev='$rev' AND l.lang_id='$langid';";
-$sth2 = $db2->prepare( $query );
-$rows = $sth2->execute;
+$query = "DELETE /* SLOW OK */ c.*, l.* FROM wma_connect c, wma_label l WHERE c.label_id = l.id AND c.rev='$rev' AND l.lang_id='$langid';";
+$sth2 = $db2->prepare( $query ) or die;
+$rows = $sth2->execute or die;
 print "Delete $rows label connectors from previous run.\n" if( $rows > 0 );
 
 undef @insert;
+
+#    $query = "create temporary table u_dschwen.compics ( page_id int, page_title varchar(255), el_to blob, img_width int, img_height int )";
+#    110     $sth = $db->prepare( $query );
+#    111     $sth->execute;
+#    112 
+#    113     print STDERR "Parparing: fetching all images with coordinates.\n";
+#    114     $query = "insert /* SLOW_OK */ into u_dschwen.compics SELECT page_id, page_title, el_to, img_width, img_height from image, page, externallinks where im    g_name = page_title and page_namespace=6 and el_to like '".$geohackurl."%' and el_from = page_id";
+#    115     $sth = $db->prepare( $query );
+#    116     $sth->execute;
+#    117 
+#    118     $query = "select /* SLOW_OK */ page_title, el_to, 0, GROUP_CONCAT( DISTINCT cl_to SEPARATOR '|'), img_width, img_height from u_dschwen.compics left joi    n categorylinks on page_id = cl_from group by page_id";
+#    119 }
+#    12
+
 
 $start = time();
 $fac = ((1<<$maxzoom)*3)/180.0;
@@ -98,8 +112,8 @@ QEND
 ;
 print "Starting query.\n";
 print STDERR  $db->errstr;
-$sth = $db->prepare( $query );
-$rows = $sth->execute;
+$sth = $db->prepare( $query ) or die;
+$rows = $sth->execute or die;
 print STDERR  $db->errstr;
 print "Query completed in in ", ( time() - $start ), " seconds. $rows rows.\n";
 
@@ -145,8 +159,8 @@ while( @row = $sth->fetchrow() )
     $xh=int($x/2);
     $yh=int($y/2);
     $query = "INSERT INTO wma_tile (x,y,z,xh,yh) VALUES ('$x','$y','$maxzoom','$xh','$yh');";
-    $sth2 = $db2->prepare( $query );
-    $rows = $sth2->execute;
+    $sth2 = $db2->prepare( $query ) or die;
+    $rows = $sth2->execute or die;
     $tileid = $db2->{ q{mysql_insertid} };
   } 
 
@@ -154,16 +168,16 @@ while( @row = $sth->fetchrow() )
   push(@insert,"CALL InsertLabel('$pageid','$langid',".($db2->quote($name)).",'$style','$lat','$lon','$weight','$tileid','$rev')");
   if( scalar(@insert) >= 10 ) {
     $query = join(';',@insert) . ";";
-    $sth2 = $db2->prepare( $query );
-    $sth2->execute;
+    $sth2 = $db2->prepare( $query ) or die;
+    $sth2->execute or die;
     undef @insert;
   }
 }
 
 if( scalar(@insert) > 0 ) {
   $query = join(';',@insert) . ";";
-  $sth2 = $db2->prepare( $query );
-  $sth2->execute;
+  $sth2 = $db2->prepare( $query ) or die;
+  $sth2->execute or die;
   undef @insert;
 }
 
