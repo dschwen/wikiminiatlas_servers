@@ -60,7 +60,7 @@ int main ( int argc , char** argv)
     int zoom = 6;
     if( argc == 5 || argc == 2 ) zoom = atoi(argv[1]);
 
-    double thickfac = 1.5/6.0;
+    double thickfac = 1.0;
     if ( zoom >= 6 && zoom < 12 ) thickfac = 1.5 / ( 12.0 - double(zoom) );
 
     datasource_cache::instance()->register_datasources("/opt/ts/mapnik/0.7.1-gcc/lib/mapnik/input"); 
@@ -638,7 +638,7 @@ int main ( int argc , char** argv)
         lyr.set_srs("+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +no_defs");
         lyr.add_style("canal");    
         lyr.add_style("waterway");    
-        lyr.add_style("iwaterway");    
+        if( zoom >= 9 ) lyr.add_style("iwaterway");    
         m.addLayer(lyr);
     }
 

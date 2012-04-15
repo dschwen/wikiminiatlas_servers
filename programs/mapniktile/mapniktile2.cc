@@ -667,7 +667,7 @@ int main ( int argc , char** argv)
     }
 
     // Ferry Lines, Railroadbridges, Causeways
-    if(zoom >= 8 ) {
+    if(zoom >= 7 ) {
         parameters p;
         p["type"]="postgis";
 #ifdef DEBUGPOSTGIS
