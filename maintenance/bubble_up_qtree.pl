@@ -82,26 +82,27 @@ for( $zoom = $maxzoom-1; $zoom >= 0; $zoom-- )
   print " inserted $rows missing tile entries.\n" if( $rows > 0 );
 
   $query = <<"  QEND"
-    SELECT /* SLOW_OK */ c.tile_id, c.label_id, t2.id 
+    SELECT /* SLOW_OK */ c.tile_id, c.label_id, t2.id, l.globe 
       FROM wma_connect c, wma_label l, wma_tile t, wma_tile t2 
       WHERE t.id = c.tile_id AND l.id = c.label_id AND t.z='$zoompo' AND c.rev='$rev' AND 
             l.lang_id='$langid' AND t2.z='$zoom' AND t2.x=t.xh AND t2.y=t.yh
-      ORDER BY t.id,l.weight DESC;
+      ORDER BY t.id,l.globe,l.weight DESC;
   QEND
   ;
   #print "$query\n";
   $sth = $db->prepare( $query );
   $sth->execute;
 
-  $lasttid = -1;
+  $lastuid = '';
   $nbubble = 0; $ntotal = 0;
   undef @insert;
   while( @row = $sth->fetchrow() ) 
   {
     $ntotal++;
-    ( $tid, $labelid, $tileid ) = @row[0..2];
-    next if( $tid == $lasttid );
-    $lasttid = $tid;
+    ( $tid, $labelid, $tileid, $globe ) = @row[0..3];
+    $uid = $tid.'|'.$globe;
+    next if( $uid eq $lastuid );
+    $lastuid = $uid;
     $nbubble++;
 
     # insert at zoom
