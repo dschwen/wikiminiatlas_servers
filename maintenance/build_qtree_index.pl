@@ -100,12 +100,13 @@ $fac = ((1<<$maxzoom)*3)/180.0;
 $query = <<QEND
   SELECT /* SLOW_OK */ 
     page_id, gc_lat, gc_lon, page_len, gc_size, gc_type,
-    CASE WHEN gc_primary=1 THEN page_title ELSE gc_name END, t.id, gc_primary
+    CASE WHEN gc_primary=1 THEN page_title ELSE gc_name END, t.id, gc_primary,
+    CASE gc_globe WHEN '' THEN 'Earth' ELSE gc_globe END
   FROM page, u_dispenser_p.coord_${lang}wiki c 
     LEFT JOIN u_dschwen.blacklist b ON b.gc_from=c.gc_from
     LEFt JOIN u_dschwen.wma_tile t ON t.z=$maxzoom 
       AND t.x=FLOOR( (gc_lon-FLOOR(gc_lon/360)*360) * $fac ) AND t.y=FLOOR( (gc_lat+90.0) * $fac )
-    WHERE page_namespace=0 AND c.gc_from=page_id AND ( gc_globe ='' or gc_globe = 'earth') 
+    WHERE page_namespace=0 AND c.gc_from=page_id  
       AND gc_lat<=90.0 AND gc_lat>=-90.0
       AND b.gc_from IS NULL;
 QEND
@@ -119,7 +120,7 @@ print "Query completed in in ", ( time() - $start ), " seconds. $rows rows.\n";
 
 while( @row = $sth->fetchrow() ) 
 {
-  ( $pageid, $lat, $lon, $weight, $pop, $type, $name, $tileid, $primary ) = @row[0..8];
+  ( $pageid, $lat, $lon, $weight, $pop, $type, $name, $tileid, $primary, $globe ) = @row[0..9];
   $pop = int($pop);
   $name =~ s/_/ /g;
 
@@ -165,7 +166,7 @@ while( @row = $sth->fetchrow() )
   } 
 
   # insert labels
-  push(@insert,"CALL InsertLabel('$pageid','$langid',".($db2->quote($name)).",'$style','$lat','$lon','$weight','$tileid','$rev')");
+  push(@insert,"CALL InsertLabel('$pageid','$langid',".($db2->quote($name)).",'$style','$globe','$lat','$lon','$weight','$tileid','$rev')");
   if( scalar(@insert) >= 10 ) {
     $query = join(';',@insert) . ";";
     $sth2 = $db2->prepare( $query ) or die;
