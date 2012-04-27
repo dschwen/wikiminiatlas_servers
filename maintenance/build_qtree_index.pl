@@ -59,17 +59,19 @@ my $db2 = DBI->connect(
 print "Connected.\n";
   
 #create temporary blacklist table in u_dschwen
-$query = "CREATE TEMPORARY TABLE u_dschwen.blacklist (gc_from INT, cpp INT, cdn INT, dnf FLOAT);";
-$sth = $db->prepare( $query );
-$rows = $sth->execute;
-$query = "INSERT /* SLOW OK */ INTO u_dschwen.blacklist SELECT gc_from, count(*) AS cpp, COUNT(DISTINCT gc_name) AS cdn, COUNT(DISTINCT gc_name)/count(*) AS dnf FROM u_dispenser_p.coord_${lang}wiki c GROUP BY gc_from HAVING dnf<0.9 AND cpp>4;";
-$sth = $db->prepare( $query ) or die;
-$rows = $sth->execute or die;
-print "Found $rows blacklisted articles.\n";
-$query = "CREATE INDEX /* SLOW OK */ from_index ON u_dschwen.blacklist (gc_from);";
-$sth = $db->prepare( $query ) or die;
-$rows = $sth->execute or die;
-print "Index created.\n";
+if( $langid != 4 ) {
+  $query = "CREATE TEMPORARY TABLE u_dschwen.blacklist (gc_from INT, cpp INT, cdn INT, dnf FLOAT);";
+  $sth = $db->prepare( $query );
+  $rows = $sth->execute;
+  $query = "INSERT /* SLOW OK */ INTO u_dschwen.blacklist SELECT gc_from, count(*) AS cpp, COUNT(DISTINCT gc_name) AS cdn, COUNT(DISTINCT gc_name)/count(*) AS dnf FROM u_dispenser_p.coord_${lang}wiki c GROUP BY gc_from HAVING dnf<0.9 AND cpp>4;";
+  $sth = $db->prepare( $query ) or die;
+  $rows = $sth->execute or die;
+  print "Found $rows blacklisted articles.\n";
+  $query = "CREATE INDEX /* SLOW OK */ from_index ON u_dschwen.blacklist (gc_from);";
+  $sth = $db->prepare( $query ) or die;
+  $rows = $sth->execute or die;
+  print "Index created.\n";
+}
 
 $rev = $ARGV[1]+0;
 $maxzoom = 13;
@@ -97,6 +99,42 @@ undef @insert;
 
 $start = time();
 $fac = ((1<<$maxzoom)*3)/180.0;
+if( $langid == 4 ) {
+  $query = "CREATE TEMPORARY TABLE u_dschwen.compics ( page_id INT, lat DOUBLE(11,8), lon DOUBLE(11,8), img_name VARCHAR(255), head FLOAT, img_width INT, img_height INT, cats TEXT, globe ENUM('','Mercury','Ariel','Phobos','Deimos','Mars','Rhea','Oberon','Europa','Tethys','Pluto','Miranda','Titania','Phoebe','Enceladus','Venus','Moon','Hyperion','Triton','Ceres','Dione','Titan','Ganymede','Umbriel','Callisto','Jupiter','Io','Earth','Mimas','Iapetus') )";
+  $sth = $db->prepare( $query );
+  $sth->execute;
+
+  print STDERR "Parparing: fetching all images with camera coordinates.\n";
+$query = <<QEND
+  INSERT INTO  u_dschwen.compics SELECT /* SLOW_OK */ 
+    page_id, gc_lat, gc_lon, img_name, gc_head, img_width, img_height,
+    "nocat",
+    CASE gc_globe WHEN '' THEN 'Earth' ELSE gc_globe END
+  FROM image, u_dispenser_p.coord_${lang}wiki c, page 
+    WHERE page_namespace=6 AND img_name=page_title
+      AND gc_lat<=90.0 AND gc_lat>=-90.0
+      AND c.gc_from=page_id
+      AND c.gc_type="camera"
+QEND
+;
+#LIMIT 100;
+  $sth = $db->prepare( $query ) or die;
+  $rows = $sth->execute or die;
+  print STDERR  $db->errstr;
+  print "PrepQuery completed in in ", ( time() - $start ), " seconds. $rows rows.\n";
+
+$query = <<QEND
+  SELECT /* SLOW_OK */ 
+    page_id, lat, lon, img_width, img_height, head, img_name, t.id, globe,
+    GROUP_CONCAT( DISTINCT cl_to SEPARATOR '|')
+  FROM  u_dschwen.compics 
+    LEFT JOIN categorylinks ON page_id = cl_from 
+    LEFT JOIN u_dschwen.wma_tile t ON t.z=$maxzoom 
+      AND t.x=FLOOR( (lon-FLOOR(lon/360)*360) * $fac ) AND t.y=FLOOR( (lat+90.0) * $fac )
+    GROUP BY page_id
+QEND
+;
+} else {
 $query = <<QEND
   SELECT /* SLOW_OK */ 
     page_id, gc_lat, gc_lon, page_len, gc_size, gc_type,
@@ -111,6 +149,8 @@ $query = <<QEND
       AND b.gc_from IS NULL;
 QEND
 ;
+}
+
 print "Starting query.\n";
 print STDERR  $db->errstr;
 $sth = $db->prepare( $query ) or die;
@@ -118,36 +158,67 @@ $rows = $sth->execute or die;
 print STDERR  $db->errstr;
 print "Query completed in in ", ( time() - $start ), " seconds. $rows rows.\n";
 
+
 while( @row = $sth->fetchrow() ) 
 {
-  ( $pageid, $lat, $lon, $weight, $pop, $type, $name, $tileid, $primary, $globe ) = @row[0..9];
-  $pop = int($pop);
-  $name =~ s/_/ /g;
+  if( $langid == 4 ) {
+    ( $pageid, $lat, $lon, $imgwidth, $imgheight, $heading, $name, $tileid, $globe, $catlist ) = @row[0..9];
+    next if( !( $name =~ /\.jpg$/i || $name =~ /\.jpeg$/i ) );
+    $style = -1;
+    
+    # 4 points for each megapixel
+    $weight = 4 * int( ( $imgwidth * $imgheight ) / ( 1024 * 1024 ) );
+    $style = -2 if( $weight == 0 );
 
-  switch(lc($type))
-  {
-    case "mountain"  { $style = 2; }
-    case "country"   { $style = 3; }
-    case "city"      { 
-      if($pop<1000000)  { $style = 8; }
-      if($pop<500000)   { $style = 7; }
-      if($pop<100000)   { $style = 6; }
-      if($pop<10000)    { $style = 5; }
-      if($pop>=1000000) { $style = 9; }
+    # additional points for awards
+    @cats = split( /\|/, $catlist );
+    foreach( @cats )
+    {
+      if( /^Featured_picture/i )   { $weight+=100; }
+      if( /^Quality_images/i )      { $weight+=50; }
+      if( /^Valued_images/i )       { $weight+=30; }
+      if( /^Pictures_of_the_day/i ) { $weight+=20; }
     }
-    case "event"      { $style = 10; }
-    else { $style = 0; }
-  }
+    
+    # numerical heading
+    if( $heading ne '' && $heading > -360 && $heading < 360 ) {
+      $heading =  int(( (int($heading)+360) % 360 ) / 27.0 + 0.5) % 16;
+    } else {
+      $heading = 18;
+    }
 
-  # take care of a few special cases
-  if    ( $name =~ /^(.*) Township, .* County, ($usstates)$/ )         { $name = "$1 Twp."; }
-  elsif ( $name =~ /^(.*) Township, ($usstates)$/ )                    { $name = "$1 Twp."; }
-  elsif ( $name =~ /^(.*), ($usstates|$auterritories|$cdnterrprov|$country)$/ ) { $name = "$1"; }
-  elsif ( $name =~ /^(.*) \(($usstates)\)$/ )                          { $name = "$1"; }
-  elsif ( $name =~ /^(.*) \(i.* County, ($usstates)\)$/ )              { $name = "$1"; }
-  
-  # calculate final weight
-  $weight = ( int($weight) + $pop/20 - length($name)**2 ) * $primary;
+    $name = $imgwidth.'|'.$imgheight.'|'.$heading.'|'.$name;
+    print "$name\n"
+  } else {
+    ( $pageid, $lat, $lon, $weight, $pop, $type, $name, $tileid, $primary, $globe ) = @row[0..9];
+    $pop = int($pop);
+    $name =~ s/_/ /g;
+
+    switch(lc($type))
+    {
+      case "mountain"  { $style = 2; }
+      case "country"   { $style = 3; }
+      case "city"      { 
+        if($pop<1000000)  { $style = 8; }
+        if($pop<500000)   { $style = 7; }
+        if($pop<100000)   { $style = 6; }
+        if($pop<10000)    { $style = 5; }
+        if($pop>=1000000) { $style = 9; }
+      }
+      case "event"      { $style = 10; }
+      else { $style = 0; }
+    }
+
+    # take care of a few special cases
+    if    ( $name =~ /^(.*) Township, .* County, ($usstates)$/ )         { $name = "$1 Twp."; }
+    elsif ( $name =~ /^(.*) Township, ($usstates)$/ )                    { $name = "$1 Twp."; }
+    elsif ( $name =~ /^(.*), ($usstates|$auterritories|$cdnterrprov|$country)$/ ) { $name = "$1"; }
+    elsif ( $name =~ /^(.*) \(($usstates)\)$/ )                          { $name = "$1"; }
+    elsif ( $name =~ /^(.*) \(i.* County, ($usstates)\)$/ )              { $name = "$1"; }
+    
+    # calculate final weight
+    $weight = ( int($weight) + $pop/20 - length($name)**2 ) * $primary;
+  }
 
   # calculate tile coordinates at maxzoom
   $y = int( ( 90.0 + $lat ) / 180.0 * ((1<<$maxzoom)*3) );
