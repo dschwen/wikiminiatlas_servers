@@ -1,5 +1,6 @@
 #!/bin/bash
 
+cd /home/dschwen/wma/maintenance
 echo $1
 REV=`./get_rev.sh $1|sed 's/ //g'`
 let REV=$REV+1

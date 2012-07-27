@@ -74,7 +74,7 @@ if( $langid != 4 ) {
 }
 
 $rev = $ARGV[1]+0;
-$maxzoom = 13;
+$maxzoom = 14;
 
 $query = "DELETE /* SLOW OK */ c.*, l.* FROM wma_connect c, wma_label l WHERE c.label_id = l.id AND c.rev='$rev' AND l.lang_id='$langid';";
 $sth2 = $db2->prepare( $query ) or die;
@@ -114,7 +114,7 @@ $query = <<QEND
     WHERE page_namespace=6 AND img_name=page_title
       AND gc_lat<=90.0 AND gc_lat>=-90.0
       AND c.gc_from=page_id
-      AND c.gc_type="camera"
+      AND ( c.gc_type="camera" OR c.gc_type IS NULL )
 QEND
 ;
 #LIMIT 100;
@@ -183,12 +183,13 @@ while( @row = $sth->fetchrow() )
     # numerical heading
     if( $heading ne '' && $heading > -360 && $heading < 360 ) {
       $heading =  int(( (int($heading)+360) % 360 ) / 27.0 + 0.5) % 16;
+      $weight += 10;
     } else {
       $heading = 18;
     }
 
-    $name = $imgwidth.'|'.$imgheight.'|'.$heading.'|'.$name;
-    print "$name\n"
+    $name = $imgwidth.'|'.$imgheight.'|'.$heading; #.'|'.$name
+    #print "$name\n"
   } else {
     ( $pageid, $lat, $lon, $weight, $pop, $type, $name, $tileid, $primary, $globe ) = @row[0..9];
     $pop = int($pop);
