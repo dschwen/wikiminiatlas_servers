@@ -86,6 +86,31 @@ WHERE t.z='$zoompo' AND t2.id IS NULL;
 
   $query = <<"  QEND"
 /* bubble_up_qtree SLOW_OK */
+INSERT INTO wma_connect (tile_id,label_id,rev)
+SELECT tileid, globe, '$rev'
+FROM (
+  SELECT c.tile_id AS tid, c.label_id, t2.id AS tileid, l.globe 
+  FROM wma_connect c, wma_label l, wma_tile t, wma_tile t2 
+  WHERE t.id = c.tile_id AND l.id = c.label_id AND t.z='$zoompo' AND c.rev='$rev' AND 
+  l.lang_id='$langid' AND t2.z='$zoom' AND t2.x=t.xh AND t2.y=t.yh
+  ORDER BY t.id,l.globe,l.weight DESC
+) AS low_level_tiles
+GROUP BY tid, globe;
+  QEND
+  ;
+  #print "$query\n";
+  $sth = $db->prepare( $query );
+  $sth->execute;
+
+  print " bubbled x out of x in ", ( time() - $start ), " seconds.\n";
+
+
+exit;
+
+# old complicated method
+
+  $query = <<"  QEND"
+/* bubble_up_qtree SLOW_OK */
     SELECT /* SLOW_OK */ c.tile_id, c.label_id, t2.id, l.globe 
       FROM wma_connect c, wma_label l, wma_tile t, wma_tile t2 
       WHERE t.id = c.tile_id AND l.id = c.label_id AND t.z='$zoompo' AND c.rev='$rev' AND 
