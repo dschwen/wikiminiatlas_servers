@@ -40,7 +40,7 @@ for( $i = 0; $i<@all_lang; $i++ ) {
 print "langid=$langid\n";
 die "unsupported language" if( $langid < 0 );
 
-$maxzoom = 13;
+$maxzoom = 14;
 $rev = $ARGV[1]+0;
 
 my $userdatabase = "u_dschwen";
@@ -57,9 +57,11 @@ for( $zoom = $maxzoom-1; $zoom >= 0; $zoom-- )
   $zoompo = $zoom +1;
 
   $query = <<"  QEND"
-    DELETE /* SLOW OK */ c.* FROM wma_connect c, wma_label l, wma_tile t 
-      WHERE c.label_id = l.id AND c.tile_id=t.id AND c.rev='$rev' 
-        AND l.lang_id='$langid' AND t.z='$zoom';
+/* bubble_up_qtree SLOW_OK */
+DELETE QUICK c.* 
+FROM wma_connect c, wma_label l, wma_tile t 
+WHERE c.label_id = l.id AND c.tile_id=t.id AND c.rev='$rev' 
+AND l.lang_id='$langid' AND t.z='$zoom';
   QEND
   ;
   #print "$query\n";
@@ -69,11 +71,12 @@ for( $zoom = $maxzoom-1; $zoom >= 0; $zoom-- )
 
   $start = time();
   $query = <<"  QEND"
-    INSERT /* SLOW OK */ INTO wma_tile (x,y,z,xh,yh) /* SLOW_OK */
-      SELECT DISTINCT  t.xh, t.yh, '$zoom', FLOOR(t.xh/2), FLOOR(t.yh/2)
-        FROM wma_tile t LEFT JOIN wma_tile t2 
-          ON ( t2.x=t.xh AND t2.y=t.yh AND t2.z=$zoom ) 
-        WHERE t.z='$zoompo' AND t2.id IS NULL;
+/* bubble_up_qtree SLOW_OK */
+INSERT INTO wma_tile (x,y,z,xh,yh)
+SELECT DISTINCT  t.xh, t.yh, '$zoom', FLOOR(t.xh/2), FLOOR(t.yh/2)
+FROM wma_tile t 
+LEFT JOIN wma_tile t2 ON t2.x=t.xh AND t2.y=t.yh AND t2.z=$zoom
+WHERE t.z='$zoompo' AND t2.id IS NULL;
   QEND
   ;
   #print "$query\n";
@@ -82,6 +85,32 @@ for( $zoom = $maxzoom-1; $zoom >= 0; $zoom-- )
   print " inserted $rows missing tile entries.\n" if( $rows > 0 );
 
   $query = <<"  QEND"
+/* bubble_up_qtree SLOW_OK */
+INSERT INTO wma_connect (tile_id,label_id,rev)
+SELECT tileid, globe, '$rev'
+FROM (
+  SELECT c.tile_id AS tid, c.label_id, t2.id AS tileid, l.globe 
+  FROM wma_connect c, wma_label l, wma_tile t, wma_tile t2 
+  WHERE t.id = c.tile_id AND l.id = c.label_id AND t.z='$zoompo' AND c.rev='$rev' AND 
+  l.lang_id='$langid' AND t2.z='$zoom' AND t2.x=t.xh AND t2.y=t.yh
+  ORDER BY t.id,l.globe,l.weight DESC
+) AS low_level_tiles
+GROUP BY tid, globe;
+  QEND
+  ;
+  #print "$query\n";
+  $sth = $db->prepare( $query );
+  $sth->execute;
+
+  print " bubbled x out of x in ", ( time() - $start ), " seconds.\n";
+
+
+exit;
+
+# old complicated method
+
+  $query = <<"  QEND"
+/* bubble_up_qtree SLOW_OK */
     SELECT /* SLOW_OK */ c.tile_id, c.label_id, t2.id, l.globe 
       FROM wma_connect c, wma_label l, wma_tile t, wma_tile t2 
       WHERE t.id = c.tile_id AND l.id = c.label_id AND t.z='$zoompo' AND c.rev='$rev' AND 

@@ -63,20 +63,20 @@ if( $langid != 4 ) {
   $query = "CREATE TEMPORARY TABLE u_dschwen.blacklist (gc_from INT, cpp INT, cdn INT, dnf FLOAT);";
   $sth = $db->prepare( $query );
   $rows = $sth->execute;
-  $query = "INSERT /* SLOW OK */ INTO u_dschwen.blacklist SELECT gc_from, count(*) AS cpp, COUNT(DISTINCT gc_name) AS cdn, COUNT(DISTINCT gc_name)/count(*) AS dnf FROM u_dispenser_p.coord_${lang}wiki c GROUP BY gc_from HAVING dnf<0.9 AND cpp>4;";
+  $query = "INSERT /* SLOW_OK */ INTO u_dschwen.blacklist SELECT gc_from, count(*) AS cpp, COUNT(DISTINCT gc_name) AS cdn, COUNT(DISTINCT gc_name)/count(*) AS dnf FROM u_dispenser_p.coord_${lang}wiki c GROUP BY gc_from HAVING dnf<0.9 AND cpp>4;";
   $sth = $db->prepare( $query ) or die;
   $rows = $sth->execute or die;
   print "Found $rows blacklisted articles.\n";
-  $query = "CREATE INDEX /* SLOW OK */ from_index ON u_dschwen.blacklist (gc_from);";
+  $query = "CREATE INDEX /* SLOW_OK */ from_index ON u_dschwen.blacklist (gc_from);";
   $sth = $db->prepare( $query ) or die;
   $rows = $sth->execute or die;
   print "Index created.\n";
 }
 
 $rev = $ARGV[1]+0;
-$maxzoom = 13;
+$maxzoom = 14;
 
-$query = "DELETE /* SLOW OK */ c.*, l.* FROM wma_connect c, wma_label l WHERE c.label_id = l.id AND c.rev='$rev' AND l.lang_id='$langid';";
+$query = "DELETE /* SLOW_OK */ c.*, l.* FROM wma_connect c, wma_label l WHERE c.label_id = l.id AND c.rev='$rev' AND l.lang_id='$langid';";
 $sth2 = $db2->prepare( $query ) or die;
 $rows = $sth2->execute or die;
 print "Delete $rows label connectors from previous run.\n" if( $rows > 0 );
@@ -114,7 +114,7 @@ $query = <<QEND
     WHERE page_namespace=6 AND img_name=page_title
       AND gc_lat<=90.0 AND gc_lat>=-90.0
       AND c.gc_from=page_id
-      AND c.gc_type="camera"
+      AND ( c.gc_type="camera" OR c.gc_type IS NULL )
 QEND
 ;
 #LIMIT 100;
@@ -183,12 +183,13 @@ while( @row = $sth->fetchrow() )
     # numerical heading
     if( $heading ne '' && $heading > -360 && $heading < 360 ) {
       $heading =  int(( (int($heading)+360) % 360 ) / 27.0 + 0.5) % 16;
+      $weight += 10;
     } else {
       $heading = 18;
     }
 
-    $name = $imgwidth.'|'.$imgheight.'|'.$heading.'|'.$name;
-    print "$name\n"
+    $name = $imgwidth.'|'.$imgheight.'|'.$heading; #.'|'.$name
+    #print "$name\n"
   } else {
     ( $pageid, $lat, $lon, $weight, $pop, $type, $name, $tileid, $primary, $globe ) = @row[0..9];
     $pop = int($pop);
