@@ -182,7 +182,7 @@ while( @row = $sth->fetchrow() )
     
     # numerical heading
     if( $heading ne '' && $heading > -360 && $heading < 360 ) {
-      $heading =  int(( (int($heading)+360) % 360 ) / 27.0 + 0.5) % 16;
+      $heading =  int(( (int($heading)+360) % 360 ) / 22.5 + 0.5) % 16; 
       $weight += 10;
     } else {
       $heading = 18;
