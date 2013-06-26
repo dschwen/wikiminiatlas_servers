@@ -38,7 +38,7 @@ $country = "Democratic Republic of the Congo";
 #getting language ID
 $lang = $ARGV[0] || "en";
 my $langid = -1;
-@all_lang = split(/,/,"ar,bg,ca,ceb,commons,cs,da,de,el,en,eo,es,et,eu,fa,fi,fr,gl,he,hi,hr,ht,hu,id,it,ja,ko,lt,ms,new,nl,nn,no,pl,pt,ro,ru,simple,sk,sl,sr,sv,sw,te,th,tr,uk,vi,vo,war,zh,af,als,be,bpy,fy,ga,hy,ka,ku,la,lb,lv,mk,ml,nds,nv,os,pam,pms,ta,vec");
+@all_lang = split(/,/,"ar,bg,ca,ceb,commons,cs,da,de,el,en,eo,es,et,eu,fa,fi,fr,gl,he,hi,hr,ht,hu,id,it,ja,ko,lt,ms,new,nl,nn,no,pl,pt,ro,ru,simple,sk,sl,sr,sv,sw,te,th,tr,uk,vi,vo,war,zh,af,als,be,bpy,fy,ga,hy,ka,ku,la,lb,lv,mk,ml,nds,nv,os,pam,pms,ta,vec,kk,ilo,ast,uz,oc,sh,tl");
 for( $i = 0; $i<@all_lang; $i++ ) {
   $langid = $i if( lc($lang) eq lc($all_lang[$i]) );
 }
@@ -46,14 +46,12 @@ print "langid=$langid\n";
 die "unsupported language" if( $langid < 0 );
 
 my $database = $lang . "wiki_p";
+
 my $host = $lang . "wiki-p.userdb.toolserver.org";
+$host = "dewiki-p.userdb.toolserver.org" if( $lang eq "commons" );
+
 my $db = DBI->connect(
   "DBI:mysql:database=$database;host=$host;mysql_use_result=0;mysql_read_default_file=" . getpwuid($<)->dir . "/.my.cnf",
-  undef, undef) or die "Error: $DBI::err, $DBI::errstr";
-
-my $userdatabase = "u_dschwen";
-my $db2 = DBI->connect(
-  "DBI:mysql:database=$userdatabase;host=$host;mysql_multi_statements=1;mysql_read_default_file=" . getpwuid($<)->dir . "/.my.cnf",
   undef, undef) or die "Error: $DBI::err, $DBI::errstr";
 
 print "Connected.\n";
@@ -76,11 +74,6 @@ if( $langid != 4 ) {
 $rev = $ARGV[1]+0;
 $maxzoom = 14;
 
-$query = "DELETE /* SLOW_OK */ c.*, l.* FROM wma_connect c, wma_label l WHERE c.label_id = l.id AND c.rev='$rev' AND l.lang_id='$langid';";
-$sth2 = $db2->prepare( $query ) or die;
-$rows = $sth2->execute or die;
-print "Delete $rows label connectors from previous run.\n" if( $rows > 0 );
-
 undef @insert;
 
 #    $query = "create temporary table u_dschwen.compics ( page_id int, page_title varchar(255), el_to blob, img_width int, img_height int )";
@@ -100,38 +93,45 @@ undef @insert;
 $start = time();
 $fac = ((1<<$maxzoom)*3)/180.0;
 if( $langid == 4 ) {
-  $query = "CREATE TEMPORARY TABLE u_dschwen.compics ( page_id INT, lat DOUBLE(11,8), lon DOUBLE(11,8), img_name VARCHAR(255), head FLOAT, img_width INT, img_height INT, cats TEXT, globe ENUM('','Mercury','Ariel','Phobos','Deimos','Mars','Rhea','Oberon','Europa','Tethys','Pluto','Miranda','Titania','Phoebe','Enceladus','Venus','Moon','Hyperion','Triton','Ceres','Dione','Titan','Ganymede','Umbriel','Callisto','Jupiter','Io','Earth','Mimas','Iapetus') )";
+  $query = "CREATE TEMPORARY TABLE u_dschwen.compics ( pid INT, lat DOUBLE(11,8), lon DOUBLE(11,8), title VARCHAR(255), head FLOAT, globe ENUM('','Mercury','Ariel','Phobos','Deimos','Mars','Rhea','Oberon','Europa','Tethys','Pluto','Miranda','Titania','Phoebe','Enceladus','Venus','Moon','Hyperion','Triton','Ceres','Dione','Titan','Ganymede','Umbriel','Callisto','Jupiter','Io','Earth','Mimas','Iapetus') )";
   $sth = $db->prepare( $query );
   $sth->execute;
 
   print STDERR "Parparing: fetching all images with camera coordinates.\n";
 $query = <<QEND
   INSERT INTO  u_dschwen.compics SELECT /* SLOW_OK */ 
-    page_id, gc_lat, gc_lon, img_name, gc_head, img_width, img_height,
-    "nocat",
+    page_id, gc_lat, gc_lon, page_title, gc_head, 
     CASE gc_globe WHEN '' THEN 'Earth' ELSE gc_globe END
-  FROM image, u_dispenser_p.coord_${lang}wiki c, page 
-    WHERE page_namespace=6 AND img_name=page_title
-      AND gc_lat<=90.0 AND gc_lat>=-90.0
+  FROM u_dispenser_p.coord_${lang}wiki c, page 
+    WHERE page_namespace=6 
       AND c.gc_from=page_id
+      AND gc_lat<=90.0 AND gc_lat>=-90.0
       AND ( c.gc_type="camera" OR c.gc_type IS NULL )
 QEND
 ;
-#LIMIT 100;
+
   $sth = $db->prepare( $query ) or die;
-  $rows = $sth->execute or die;
-  print STDERR  $db->errstr;
+  $rows = $sth->execute or die "Error filling prep table: ".$db->errstr;
   print "PrepQuery completed in in ", ( time() - $start ), " seconds. $rows rows.\n";
+
+  $query = "CREATE INDEX pageid ON u_dschwen.compics (pid)";
+  $sth = $db->prepare( $query );
+  $sth->execute or die "Error building index: ".$db->errstr;
+
+  $query = "CREATE INDEX pagetit ON u_dschwen.compics (title(10))";
+  $sth = $db->prepare( $query );
+  $sth->execute or die "Error building index: ".$db->errstr;
 
 $query = <<QEND
   SELECT /* SLOW_OK */ 
-    page_id, lat, lon, img_width, img_height, head, img_name, t.id, globe,
+    pid, lat, lon, img_width, img_height, head, title, t.id, globe,
     GROUP_CONCAT( DISTINCT cl_to SEPARATOR '|')
-  FROM  u_dschwen.compics 
-    LEFT JOIN categorylinks ON page_id = cl_from 
+  FROM  image, u_dschwen.compics 
+    LEFT JOIN categorylinks ON pid = cl_from 
     LEFT JOIN u_dschwen.wma_tile t ON t.z=$maxzoom 
       AND t.x=FLOOR( (lon-FLOOR(lon/360)*360) * $fac ) AND t.y=FLOOR( (lat+90.0) * $fac )
-    GROUP BY page_id
+    WHERE title = img_name
+    GROUP BY pid
 QEND
 ;
 } else {
@@ -158,6 +158,15 @@ $rows = $sth->execute or die;
 print STDERR  $db->errstr;
 print "Query completed in in ", ( time() - $start ), " seconds. $rows rows.\n";
 
+my $userdatabase = "u_dschwen";
+my $db2 = DBI->connect(
+  "DBI:mysql:database=$userdatabase;host=$host;mysql_multi_statements=1;mysql_read_default_file=" . getpwuid($<)->dir . "/.my.cnf",
+  undef, undef) or die "Error: $DBI::err, $DBI::errstr";
+
+$query = "DELETE /* SLOW_OK */ c.*, l.* FROM wma_connect c, wma_label l WHERE c.label_id = l.id AND c.rev='$rev' AND l.lang_id='$langid';";
+$sth2 = $db2->prepare( $query ) or die;
+$rows = $sth2->execute or die;
+print "Delete $rows label connectors from previous run.\n" if( $rows > 0 );
 
 while( @row = $sth->fetchrow() ) 
 {
@@ -232,6 +241,12 @@ while( @row = $sth->fetchrow() )
     $xh=int($x/2);
     $yh=int($y/2);
     $query = "INSERT INTO wma_tile (x,y,z,xh,yh) VALUES ('$x','$y','$maxzoom','$xh','$yh');";
+
+    # make sure the connection is there
+    #$db2 ||= DBI->connect(
+    #  "DBI:mysql:database=$userdatabase;host=$host;mysql_multi_statements=1;mysql_read_default_file=" . getpwuid($<)->dir . "/.my.cnf",
+    #  undef, undef) or die "Error: $DBI::err, $DBI::errstr";
+
     $sth2 = $db2->prepare( $query ) or die;
     $rows = $sth2->execute or die;
     $tileid = $db2->{ q{mysql_insertid} };
@@ -241,16 +256,34 @@ while( @row = $sth->fetchrow() )
   push(@insert,"CALL InsertLabel('$pageid','$langid',".($db2->quote($name)).",'$style','$globe','$lat','$lon','$weight','$tileid','$rev')");
   if( scalar(@insert) >= 10 ) {
     $query = join(';',@insert) . ";";
-    $sth2 = $db2->prepare( $query ) or die;
-    $sth2->execute or die;
+
+    # make sure the connection is there
+    #while(1) {
+    #  $db2 ||= DBI->connect(
+    #    "DBI:mysql:database=$userdatabase;host=$host;mysql_multi_statements=1;mysql_read_default_file=" . getpwuid($<)->dir . "/.my.cnf",
+    #    undef, undef) or die "Error: $DBI::err, $DBI::errstr";
+
+      $sth2 = $db2->prepare( $query ) or next;
+      $sth2->execute or next;
+      #  last;
+      #}
     undef @insert;
   }
 }
 
 if( scalar(@insert) > 0 ) {
   $query = join(';',@insert) . ";";
-  $sth2 = $db2->prepare( $query ) or die;
-  $sth2->execute or die;
+
+  # make sure the connection is there
+  #while(1) {
+  #  $db2 ||= DBI->connect(
+  #    "DBI:mysql:database=$userdatabase;host=$host;mysql_multi_statements=1;mysql_read_default_file=" . getpwuid($<)->dir . "/.my.cnf",
+  #    undef, undef) or die "Error: $DBI::err, $DBI::errstr";
+
+    $sth2 = $db2->prepare( $query ) or next;
+    $sth2->execute or next;
+    #  last;
+  #}
   undef @insert;
 }
 

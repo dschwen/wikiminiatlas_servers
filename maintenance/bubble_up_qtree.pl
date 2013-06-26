@@ -33,7 +33,7 @@ $lang = $ARGV[0] || "en";
 
 #getting language ID
 my $langid = -1;
-@all_lang = split(/,/,"ar,bg,ca,ceb,commons,cs,da,de,el,en,eo,es,et,eu,fa,fi,fr,gl,he,hi,hr,ht,hu,id,it,ja,ko,lt,ms,new,nl,nn,no,pl,pt,ro,ru,simple,sk,sl,sr,sv,sw,te,th,tr,uk,vi,vo,war,zh,af,als,be,bpy,fy,ga,hy,ka,ku,la,lb,lv,mk,ml,nds,nv,os,pam,pms,ta,vec");
+@all_lang = split(/,/,"ar,bg,ca,ceb,commons,cs,da,de,el,en,eo,es,et,eu,fa,fi,fr,gl,he,hi,hr,ht,hu,id,it,ja,ko,lt,ms,new,nl,nn,no,pl,pt,ro,ru,simple,sk,sl,sr,sv,sw,te,th,tr,uk,vi,vo,war,zh,af,als,be,bpy,fy,ga,hy,ka,ku,la,lb,lv,mk,ml,nds,nv,os,pam,pms,ta,vec,kk,ilo,ast,uz,oc,sh,tl");
 for( $i = 0; $i<@all_lang; $i++ ) {
   $langid = $i if( lc($lang) eq lc($all_lang[$i]) );
 }
@@ -44,7 +44,10 @@ $maxzoom = 14;
 $rev = $ARGV[1]+0;
 
 my $userdatabase = "u_dschwen";
+
 my $host = $lang . "wiki-p.userdb.toolserver.org";
+$host = "dewiki-p.userdb.toolserver.org" if( $lang eq "commons" );
+
 my $db = DBI->connect(
   "DBI:mysql:database=$userdatabase;host=$host;mysql_read_default_file=" . getpwuid($<)->dir . "/.my.cnf",
   undef, undef) or die "Error: $DBI::err, $DBI::errstr";
@@ -87,7 +90,7 @@ WHERE t.z='$zoompo' AND t2.id IS NULL;
   $query = <<"  QEND"
 /* bubble_up_qtree SLOW_OK */
 INSERT INTO wma_connect (tile_id,label_id,rev)
-SELECT tileid, globe, '$rev'
+SELECT tileid, label_id, '$rev'
 FROM (
   SELECT c.tile_id AS tid, c.label_id, t2.id AS tileid, l.globe 
   FROM wma_connect c, wma_label l, wma_tile t, wma_tile t2 
@@ -99,16 +102,16 @@ GROUP BY tid, globe;
   QEND
   ;
   #print "$query\n";
-  $sth = $db->prepare( $query );
+  $sth = $db->prepare( $query ) or die "error preparing bubble up query";
   $sth->execute;
 
   print " bubbled x out of x in ", ( time() - $start ), " seconds.\n";
-
+}
 
 exit;
 
 # old complicated method
-
+if(0) {
   $query = <<"  QEND"
 /* bubble_up_qtree SLOW_OK */
     SELECT /* SLOW_OK */ c.tile_id, c.label_id, t2.id, l.globe 
