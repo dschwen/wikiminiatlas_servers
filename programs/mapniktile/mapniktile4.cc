@@ -31,10 +31,8 @@
 #include <mapnik/font_engine_freetype.hpp>
 #include <mapnik/proj_transform.hpp>
 #include <mapnik/agg_renderer.hpp>
-#include <mapnik/expression.hpp>
 #include <mapnik/color_factory.hpp>
 #include <mapnik/image_util.hpp>
-//#include <mapnik/expression_grammar.hpp>
 
 #include <iostream>
 
@@ -65,7 +63,7 @@ int main ( int argc , char** argv)
     double thickfac = 1.0;
     if ( zoom >= 6 && zoom < 12 ) thickfac = 1.5 / ( 12.0 - double(zoom) );
 
-    datasource_cache::instance()->register_datasources("/opt/ts/mapnik/0.7.1-gcc/lib/mapnik/input"); 
+    datasource_cache::instance()->register_datasources("/usr/lib/mapnik/2.0/input"); 
     freetype_engine::register_font("/opt/ts/share/fonts/DejaVuSans.ttf");
     
     Map m(128,128);
