@@ -1,0 +1,2 @@
+mapniktile4: mapniktile4.cc
+	g++  mapniktile4.cc -o mapniktile4 `mapnik-config --cflags --libs --ldflags --dep-libs` `pkg-config --cflags sigc++-2.0`

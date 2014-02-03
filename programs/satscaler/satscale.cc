@@ -80,24 +80,24 @@ const char *patho2 = "/home/dschwen/public_html/wma/tiles/mapnik/sat/originals/%
 // assemble the tile path into fname
 void tilename( int x, int y, int z, char *fname )
 {
-	sprintf( fname, path, z, y, y, x );
+  sprintf( fname, path, z, y, y, x );
 }
 
 // assemble the tile directory into fname
 void tilepath( int x, int y, int z, char *fname )
 {
-	sprintf( fname, path2, z, y );
+  sprintf( fname, path2, z, y );
 }
 
 // check whether a file already exists
 bool file_exists( char *fname )
 {
-	if( FILE * file = fopen( fname, "r" ) )
-	{
-		fclose( file );
-		return true;
-	}
-	return false;
+  if( FILE * file = fopen( fname, "r" ) )
+  {
+    fclose( file );
+    return true;
+  }
+  return false;
 }
 
 // yikes, globals!
@@ -109,194 +109,196 @@ struct stat sb;
 
 int tilerequest( int x, int y, int z )
 {
-	ilInit();
-	iluInit();
+  ilInit();
+  iluInit();
 
-	const int nx = (tilesize/128);
-	const int ny = nx;
+  const int nx = (tilesize/128);
+  const int ny = nx;
 
-	char fname[1000], request[1000], dir[1000], url[1000];
-	char *buf;
-	int len;
+  char fname[1000], request[1000], dir[1000], url[1000];
+  char *buf;
+  int len;
 
-	tilename( x, y, z, fname );
-	if( file_exists( fname ) ) return 0;
+  tilename( x, y, z, fname );
+  if( file_exists( fname ) ) return 0;
 
-	// get degree window for the tile x,y,z
-	double wmatiledeg;
-	double bx1, by1, bx2, by2;
-	wmatiledeg = 60.0/(1<<z);
+  // get degree window for the tile x,y,z
+  double wmatiledeg;
+  double bx1, by1, bx2, by2;
+  wmatiledeg = 60.0/(1<<z);
 
-	if( x >= 3*(1<<z) ) x -= 6*(1<<z);
-	// bx1,by1 is top-left-corner
-	bx1 = x * wmatiledeg;
-        by1 = 90.0 - ( y + 0.0 ) * wmatiledeg;
-        //bx2 = ( x + 1.0 ) * wmatiledeg;
-        //by2 = 90.0 - y * wmatiledeg;
+  if( x >= 3*(1<<z) ) x -= 6*(1<<z);
+  
+  // bx1,by1 is top-left-corner
+  bx1 = x * wmatiledeg;
+  by1 = 90.0 - ( y + 0.0 ) * wmatiledeg;
+  //bx2 = ( x + 1.0 ) * wmatiledeg;
+  //by2 = 90.0 - y * wmatiledeg;
 
-	// compare degrees per pixel
-	double wmadpp = wmatiledeg / 128;
+  // compare degrees per pixel
+  double wmadpp = wmatiledeg / 128;
 
-	// find the nasa zoomlevel that barely has less degrees per pixel, than the requested tile
-	int nasa_z;
-	for( nasa_z = 0; nasa_z < nasa_levels - 1; nasa_z++ )
-		if( degsize[nasa_z]/tilesize <= wmadpp ) break;
-	if( nasa_z == nasa_levels ) return 1;
+  // find the nasa zoomlevel that barely has less degrees per pixel, than the requested tile
+  int nasa_z;
+  for( nasa_z = 0; nasa_z < nasa_levels - 1; nasa_z++ )
+    if( degsize[nasa_z]/tilesize <= wmadpp ) break;
+  if( nasa_z == nasa_levels ) return 1;
 
-	// find the nasa tile, that comtains the top-left corner of the WMA tile
-	int ntx = int( ( bx1 + 180.0 ) / degsize[nasa_z] );
-	int nty = int( ( 90.0 - by1 ) / degsize[nasa_z] );
+  // find the nasa tile, that comtains the top-left corner of the WMA tile
+  int ntx = int( ( bx1 + 180.0 ) / degsize[nasa_z] );
+  int nty = int( ( 90.0 - by1 ) / degsize[nasa_z] );
 
-	printf(" lat/by1=%f lon/bx1=%f\n", by1, bx1 );
-	printf(" nasa_z=%d, ntx=%d, nty=%d\n", nasa_z, ntx, nty );
+  printf(" lat/by1=%f lon/bx1=%f\n", by1, bx1 );
+  printf(" nasa_z=%d, ntx=%d, nty=%d\n", nasa_z, ntx, nty );
 
 
-	float Alat, Alon, Blat, Blon;
+  float Alat, Alon, Blat, Blon;
     FILE *ocache;
 
-	// get the four nasa tiles
-	for( int tx = 1; tx >=0; tx--)
-		for( int ty = 1; ty >=0; ty--)
-		{
-			Alat = 90.0 - (nty+ty)*degsize[nasa_z];
-			Blat = Alat - degsize[nasa_z];
-			Alon = -180.0 + (ntx+tx)*degsize[nasa_z];
-			Blon = Alon + degsize[nasa_z];
+  // get the four nasa tiles
+  for( int tx = 1; tx >=0; tx--)
+    for( int ty = 1; ty >=0; ty--)
+    {
+      Alat = 90.0 - (nty+ty)*degsize[nasa_z];
+      Blat = Alat - degsize[nasa_z];
+      Alon = -180.0 + (ntx+tx)*degsize[nasa_z];
+      Blon = Alon + degsize[nasa_z];
 
-			ilBindImage( im_load );
+      ilBindImage( im_load );
 
-            // did we cache that original tile to disk already?
-			sprintf( fname, patho, nasa_z, nty+ty, ntx+tx );
-			if( file_exists( fname ) )
-            {
-                printf( " using ocache\n" );
-			    if( !ilLoad( IL_JPG, fname ) )
-                {
-                    // was the cache file empty? then generate a black tile
-                    ilTexImage( tilesize, tilesize, 0, 3, IL_RGB, IL_UNSIGNED_BYTE, 0 );
-                    ilClearImage();
-                }
-            }
-            else
-            {
-			    sprintf( request, reqtemp, tilesize, tilesize, Alon, Blat, Blon, Alat );
-			    sprintf( url, baseurl, request );
-			    len = http_fetch( url, &buf );
-			    printf(" downloaded: %d bytes\n", len );
+      // did we cache that original tile to disk already?
+      sprintf( fname, patho, nasa_z, nty+ty, ntx+tx );
+      if( file_exists( fname ) )
+      {
+        printf( " using ocache\n" );
+        if( !ilLoad( IL_JPG, fname ) )
+        {
+            // was the cache file empty? then generate a black tile
+            ilTexImage( tilesize, tilesize, 0, 3, IL_RGB, IL_UNSIGNED_BYTE, 0 );
+            ilClearImage();
+        }
+      }
+      else
+      {
+        sprintf( request, reqtemp, tilesize, tilesize, Alon, Blat, Blon, Alat );
+        sprintf( url, baseurl, request );
+        len = http_fetch( url, &buf );
+        printf(" downloaded: %d bytes\n", len );
 
-    			if( !ilLoadL( IL_JPG, buf, len ) )
-                {
-                    // produce a black tile if no valid satellite data was returned
-                    printf( buf );
-	                ilTexImage( tilesize, tilesize, 0, 3, IL_RGB, IL_UNSIGNED_BYTE, 0 );
-                    ilClearImage();
+        if( !ilLoadL( IL_JPG, buf, len ) )
+        {
+          // produce a black tile if no valid satellite data was returned
+          printf( buf );
+          ilTexImage( tilesize, tilesize, 0, 3, IL_RGB, IL_UNSIGNED_BYTE, 0 );
+          ilClearImage();
 
-                    // set length to zero, to write an empty cache file (avoids subsequent requests)
-                    len = 0;
-                }
+          // set length to zero, to write an empty cache file (avoids subsequent requests)
+          len = 0;
+        }
 
-                // writing downloaded tile to disk (even if it's empty!)
-			    sprintf( dir, patho2, nasa_z, nty+ty );
-                if( stat( dir, &sb ) == -1) 
-                {
-                    printf( " ocache directory %s does not yet exist, creating..\n", dir );
-                    if( errno == ENOENT )
-                        if( mkdir( dir, 0777 ) == -1 ) printf(" error!\n" );
-                }
+        // writing downloaded tile to disk (even if it's empty!)
+        sprintf( dir, patho2, nasa_z, nty+ty );
+        if( stat( dir, &sb ) == -1) 
+        {
+          printf( " ocache directory %s does not yet exist, creating..\n", dir );
+          if( errno == ENOENT )
+            if( mkdir( dir, 0777 ) == -1 ) printf(" error!\n" );
+        }
 
-                ocache = fopen( fname, "w" );
-                if( ocache != NULL )
-                {
-                    fwrite( buf, len, 1, ocache );
-                    fclose( ocache );
-                }
-                else
-                    printf(" error writing ocache %s \n", fname );
-            }
+        ocache = fopen( fname, "w" );
+        if( ocache != NULL )
+        {
+          fwrite( buf, len, 1, ocache );
+          fclose( ocache );
+        }
+        else
+          printf(" error writing ocache %s \n", fname );
+      }
 
-			ilBindImage( im_work );
-			ilOverlayImage( im_load, tx*tilesize, ty*tilesize, 0 );
-			
-			free( buf );
-			buf = 0;
-		}		
-	// Alat, Alon should now contain the top left corner of the work area
-			
-	// now find the wma tile again, that fully fits in the top-left corner of the top left nasa tile
-	int wtx = int( ( double(ntx) * degsize[nasa_z] - 180.0 ) / wmatiledeg );
-	//if( wtx < 0.0 ) wtx += 360.0; 
-	//wtx /= wmatiledeg;
-	int wty = int( ( double(nty) * degsize[nasa_z] ) / wmatiledeg );
+      ilBindImage( im_work );
+      ilOverlayImage( im_load, tx*tilesize, ty*tilesize, 0 );
+      
+      free( buf );
+      buf = 0;
+    }    
 
-    //wtx = int( Alon/180.0 * zoomlevel[z] );
-    //wty = int( ( 90 - Alat ) / 180.0 );
+  // Alat, Alon should now contain the top left corner of the work area
+      
+  // now find the wma tile again, that fully fits in the top-left corner of the top left nasa tile
+  int wtx = int( ( double(ntx) * degsize[nasa_z] - 180.0 ) / wmatiledeg );
+  //if( wtx < 0.0 ) wtx += 360.0; 
+  //wtx /= wmatiledeg;
+  int wty = int( ( double(nty) * degsize[nasa_z] ) / wmatiledeg );
 
-
-	printf( " wtx, wty = %d %d, Alon, Alat = %f,%f    %f %f \n",  wtx, wty,Alon, Alat, ( wtx * wmatiledeg - Alon )  * tilesize / degsize[nasa_z],  wty * wmatiledeg - Alat   );
-
-	int Apx, Apy, Bpx, Bpy, tw, th, xx;
-	ilBindImage( im_tile );
-	//for( int ty = wty+1; ty > wty - (2.0*degsize[nasa_z]/wmatiledeg) - 1; ty-- )
-	for( int tx = wtx-2; tx < wtx + (2.0*degsize[nasa_z]/wmatiledeg) + 2; tx++ )
-		for( int ty = wty-2; ty < wty + (2.0*degsize[nasa_z]/wmatiledeg) + 2; ty++ )
-		{
-			Apx = int( ( ( tx     * wmatiledeg - Alon ) * tilesize ) / degsize[nasa_z] );
-			Bpx = int( ( ( (tx+1) * wmatiledeg - Alon ) * tilesize ) / degsize[nasa_z] );
-
-			Apy = -int( ( ( 90 - ty     * wmatiledeg - Alat ) * tilesize ) / degsize[nasa_z] );
-			Bpy = -int( ( ( 90 - (ty+1) * wmatiledeg - Alat ) * tilesize ) / degsize[nasa_z] );
+  //wtx = int( Alon/180.0 * zoomlevel[z] );
+  //wty = int( ( 90 - Alat ) / 180.0 );
 
 
-			//printf(" (%d,%d) cutting (%d,%d)-(%d,%d)\n", tx, ty, Apx, Apy, Bpx, Bpy );
-			if( Apx >= 0 && Apy >= 0 && Bpx <= 2*tilesize && Bpy <= 2*tilesize )
-			{
-				if( tx <0 ) xx = tx + 6*(1<<z);
-				else xx = tx;
-				
-                // does the tile path exist? if not, make it!
-				tilepath( xx, ty, z, dir );
-                if( stat( dir, &sb ) == -1) 
-                {
-                    printf( " directory %s does not yet exist, creating..\n", dir );
-                    if( errno == ENOENT )
-                        if( mkdir( dir, 0777 ) == -1 ) printf(" error!\n" );
-                }
+  printf( " wtx, wty = %d %d, Alon, Alat = %f,%f    %f %f \n",  wtx, wty,Alon, Alat, ( wtx * wmatiledeg - Alon )  * tilesize / degsize[nasa_z],  wty * wmatiledeg - Alat   );
 
-				tilename( xx, ty, z, fname );
-				if( !file_exists( fname ) )
-				{
-					tw = Bpx - Apx;
-					th = Bpy - Apy;
-				
-					//printf( "new image %d x %d\n", tw, th ); 
-					ilTexImage( tw, th, 0, 3, IL_RGB, IL_UNSIGNED_BYTE, 0 );
-				
+  int Apx, Apy, Bpx, Bpy, tw, th, xx;
+  ilBindImage( im_tile );
+  //for( int ty = wty+1; ty > wty - (2.0*degsize[nasa_z]/wmatiledeg) - 1; ty-- )
+  for( int tx = wtx-2; tx < wtx + (2.0*degsize[nasa_z]/wmatiledeg) + 2; tx++ )
+    for( int ty = wty-2; ty < wty + (2.0*degsize[nasa_z]/wmatiledeg) + 2; ty++ )
+    {
+      Apx = int( ( ( tx     * wmatiledeg - Alon ) * tilesize ) / degsize[nasa_z] );
+      Bpx = int( ( ( (tx+1) * wmatiledeg - Alon ) * tilesize ) / degsize[nasa_z] );
 
-					// crop it from the work image
-					ilBlit( im_work, 0, 0, 0, Apx, Apy, 0, tw, th, 1 );
-
-					// scale it to 128x128
-					iluImageParameter( ILU_FILTER, ILU_LINEAR );
-					iluScale( 128, 128, 1 );
-
-					// sharpen the sat data a little bit
-					//iluSharpen( 1.75, 1 );
-
-					ilSave( IL_PNG, fname );
-					printf( "%s (%x)\n", fname, ilGetError() );
-				}
-                else printf(" already rendered %s\n", fname );
-			}
-		}
+      Apy = -int( ( ( 90 - ty     * wmatiledeg - Alat ) * tilesize ) / degsize[nasa_z] );
+      Bpy = -int( ( ( 90 - (ty+1) * wmatiledeg - Alat ) * tilesize ) / degsize[nasa_z] );
 
 
-	/*
-	FILE *out = fopen( "debug.jpg", "w" );
-	fwrite( buf, len, 1, out );
-	fclose( out );
-	*/
+      //printf(" (%d,%d) cutting (%d,%d)-(%d,%d)\n", tx, ty, Apx, Apy, Bpx, Bpy );
+      if( Apx >= 0 && Apy >= 0 && Bpx <= 2*tilesize && Bpy <= 2*tilesize )
+      {
+        if( tx <0 ) xx = tx + 6*(1<<z);
+        else xx = tx;
+        
+        // does the tile path exist? if not, make it!
+        tilepath( xx, ty, z, dir );
+        if( stat( dir, &sb ) == -1) 
+        {
+          printf( " directory %s does not yet exist, creating..\n", dir );
+          if( errno == ENOENT )
+            if( mkdir( dir, 0777 ) == -1 ) printf(" error!\n" );
+        }
 
-	return 0;
+        tilename( xx, ty, z, fname );
+        if( !file_exists( fname ) )
+        {
+          tw = Bpx - Apx;
+          th = Bpy - Apy;
+        
+          //printf( "new image %d x %d\n", tw, th ); 
+          ilTexImage( tw, th, 0, 3, IL_RGB, IL_UNSIGNED_BYTE, 0 );
+        
+
+          // crop it from the work image
+          ilBlit( im_work, 0, 0, 0, Apx, Apy, 0, tw, th, 1 );
+
+          // scale it to 128x128
+          iluImageParameter( ILU_FILTER, ILU_LINEAR );
+          iluScale( 128, 128, 1 );
+
+          // sharpen the sat data a little bit
+          //iluSharpen( 1.75, 1 );
+
+          ilSave( IL_PNG, fname );
+          printf( "%s (%x)\n", fname, ilGetError() );
+        }
+        else printf(" already rendered %s\n", fname );
+      }
+    }
+
+
+  /*
+  FILE *out = fopen( "debug.jpg", "w" );
+  fwrite( buf, len, 1, out );
+  fclose( out );
+  */
+
+  return 0;
 }
 
 
@@ -370,3 +372,4 @@ int main( int argc, char *argv[] )
     //fprintf( stderr, "looping... %d\n", feof(fp) );
   }
 }
+
