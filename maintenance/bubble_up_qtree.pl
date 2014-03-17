@@ -43,17 +43,17 @@ die "unsupported language" if( $langid < 0 );
 $maxzoom = 14;
 $rev = $ARGV[1]+0;
 
-my $userdatabase = "u_dschwen";
 
-my $host = $lang . "wiki-p.userdb.toolserver.org";
-$host = "dewiki-p.userdb.toolserver.org" if( $lang eq "commons" );
+my $wmadatabase = "p50380g50921__wma_p";
+my $host = $lang . "wiki.labsdb";
 
 my $db = DBI->connect(
-  "DBI:mysql:database=$userdatabase;host=$host;mysql_read_default_file=" . getpwuid($<)->dir . "/.my.cnf",
+  "DBI:mysql:database=$wmadatabase;host=$host;mysql_use_result=0;mysql_read_default_file=" . getpwuid($<)->dir . "/replica.my.cnf",
   undef, undef) or die "Error: $DBI::err, $DBI::errstr";
 
 print "Connected.\n";
-  
+      
+
 for( $zoom = $maxzoom-1; $zoom >= 0; $zoom-- ) 
 {
   print "Zoom $zoom\n";

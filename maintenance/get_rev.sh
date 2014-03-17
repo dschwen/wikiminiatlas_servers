@@ -1,3 +1,4 @@
 #!/bin/bash
 
-grep '^"'$1'" =>' ~/public_html/wma/rev.inc | cut -d'>' -f2 | cut -d, -f1
+WEB=/var/www/wikiminiatlas
+grep '^"'$1'" =>' $WEB/rev.inc | cut -d'>' -f2 | cut -d, -f1

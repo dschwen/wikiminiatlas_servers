@@ -160,7 +160,7 @@ print STDERR  $db->errstr;
 print "Query completed in in ", ( time() - $start ), " seconds. $rows rows.\n";
 
 my $db2 = DBI->connect(
-  "DBI:mysql:database=$wmadatabase;host=$host;mysql_multi_statements=1;mysql_read_default_file=" . getpwuid($<)->dir . "/.my.cnf",
+  "DBI:mysql:database=$wmadatabase;host=$host;mysql_multi_statements=1;mysql_read_default_file=" . getpwuid($<)->dir . "/replica.my.cnf",
   undef, undef) or die "Error: $DBI::err, $DBI::errstr";
 
 $query = "DELETE /* SLOW_OK */ c.*, l.* FROM wma_connect c, wma_label l WHERE c.label_id = l.id AND c.rev='$rev' AND l.lang_id='$langid';";
