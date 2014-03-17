@@ -70,12 +70,12 @@ const char *baseurl = "http://onearth.jpl.nasa.gov/wms.cgi?request=%s";
 // WMA tiles
 //const char *path  = "/projects/wma/www/tiles/mapnik/sat/%d/%d/%d_%d.png"; // z,y,y,x
 //const char *path2 = "/projects/wma/www/tiles/mapnik/sat/%d/%d"; // z,y
-const char *path  = "/home/dschwen/public_html/wma/tiles/mapnik/sat/%d/%d/%d_%d.png"; // z,y,y,x
-const char *path2 = "/home/dschwen/public_html/wma/tiles/mapnik/sat/%d/%d"; // z,y
+const char *path  = "mapnik/sat/%d/%d/%d_%d.png"; // z,y,y,x
+const char *path2 = "mapnik/sat/%d/%d"; // z,y
 
 // original nasa tiles
-const char *patho = "/home/dschwen/public_html/wma/tiles/mapnik/sat/originals/%d/%d/%d.jpg"; // z,y,x
-const char *patho2 = "/home/dschwen/public_html/wma/tiles/mapnik/sat/originals/%d/%d"; // z,y
+const char *patho = "mapnik/sat/originals/%d/%d/%d.jpg"; // z,y,x
+const char *patho2 = "mapnik/sat/originals/%d/%d"; // z,y
 
 // assemble the tile path into fname
 void tilename( int x, int y, int z, char *fname )

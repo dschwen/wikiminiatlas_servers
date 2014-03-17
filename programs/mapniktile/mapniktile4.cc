@@ -61,7 +61,7 @@ int main ( int argc , char** argv)
     if( argc == 5 || argc == 2 ) zoom = atoi(argv[1]);
 
     double thickfac = 1.0;
-    if ( zoom >= 6 && zoom < 12 ) thickfac = 1.5 / ( 12.0 - double(zoom) );
+    if ( zoom >= 6 && zoom < 11 ) thickfac = 1.5 / ( 12.0 - double(zoom) );
 
     datasource_cache::instance()->register_datasources("/usr/lib/mapnik/2.0/input"); 
     freetype_engine::register_font("/opt/ts/share/fonts/DejaVuSans.ttf");
@@ -884,7 +884,7 @@ int main ( int argc , char** argv)
 		// exists
 		fclose(dfp);
 		std::cout << "already created file " << tilefile << std::endl;
-                //continue;
+                continue;
 	      } 
 
               // doesnt exist
