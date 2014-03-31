@@ -46,6 +46,9 @@
 #include <linux/stat.h>
 #endif
 
+const char* osm_dbname = "gis";
+const char* osm_dbuser = "osm";
+
 const unsigned int sleep_max = 1000;
 unsigned int sleep_t = 0;
 
@@ -538,8 +541,8 @@ int main ( int argc , char** argv)
         p["host"]="sql-mapnik";
         p["port"]=5432;
 #endif
-        p["dbname"]="gis";
-        p["user"]="dschwen";
+        p["dbname"] = osm_dbname;
+        p["user"] = osm_dbuser;
         p["password"]="";
         p["estimate_extent"]=false;
         p["extent"]="-20037508,-19929239,20037508,19929239";
@@ -589,8 +592,8 @@ int main ( int argc , char** argv)
         p["host"]="sql-mapnik";
         p["port"]=5432;
 #endif
-        p["dbname"]="gis";
-        p["user"]="dschwen";
+        p["dbname"] = osm_dbname;
+        p["user"] = osm_dbuser;
         p["password"]="";
         p["estimate_extent"]=false;
         p["extent"]="-20037508,-19929239,20037508,19929239";
@@ -628,8 +631,8 @@ int main ( int argc , char** argv)
         p["host"]="sql-mapnik";
         p["port"]=5432;
 #endif
-        p["dbname"]="gis";
-        p["user"]="dschwen";
+        p["dbname"] = osm_dbname;
+        p["user"] = osm_dbuser;
         p["password"]="";
         p["estimate_extent"]=false;
         p["extent"]="-20037508,-19929239,20037508,19929239";
@@ -680,8 +683,8 @@ int main ( int argc , char** argv)
         p["host"]="sql-mapnik";
         p["port"]=5432;
 #endif
-        p["dbname"]="gis";
-        p["user"]="dschwen";
+        p["dbname"] = osm_dbname;
+        p["user"] = osm_dbuser;
         p["password"]="";
         p["estimate_extent"]=false;
         p["extent"]="-20037508,-19929239,20037508,19929239";
@@ -707,8 +710,8 @@ int main ( int argc , char** argv)
         p["host"]="sql-mapnik";
         p["port"]=5432;
 #endif
-        p["dbname"]="gis";
-        p["user"]="dschwen";
+        p["dbname"] = osm_dbname;
+        p["user"] = osm_dbuser;
         p["password"]="";
         p["estimate_extent"]=false;
         p["extent"]="-20037508,-19929239,20037508,19929239";
@@ -733,8 +736,8 @@ int main ( int argc , char** argv)
         p["host"]="sql-mapnik";
         p["port"]=5432;
 #endif
-        p["dbname"]="gis";
-        p["user"]="dschwen";
+        p["dbname"] = osm_dbname;
+        p["user"] = osm_dbuser;
         p["password"]="";
         p["estimate_extent"]=false;
         p["extent"]="-20037508,-19929239,20037508,19929239";
@@ -759,8 +762,8 @@ int main ( int argc , char** argv)
         p["host"]="sql-mapnik";
         p["port"]=5432;
 #endif
-        p["dbname"]="gis";
-        p["user"]="dschwen";
+        p["dbname"] = osm_dbname;
+        p["user"] = osm_dbuser;
         p["password"]="";
         p["estimate_extent"]=false;
         p["extent"]="-20037508,-19929239,20037508,19929239";
@@ -785,8 +788,8 @@ int main ( int argc , char** argv)
         p["host"]="sql-mapnik";
         p["port"]=5432;
 #endif
-        p["dbname"]="gis";
-        p["user"]="dschwen";
+        p["dbname"] = osm_dbname;
+        p["user"] = osm_dbuser;
         p["password"]="";
         p["estimate_extent"]=false;
         p["extent"]="-20037508,-19929239,20037508,19929239";
@@ -811,8 +814,8 @@ int main ( int argc , char** argv)
         p["host"]="sql-mapnik";
         p["port"]=5432;
 #endif
-        p["dbname"]="gis";
-        p["user"]="dschwen";
+        p["dbname"] = osm_dbname;
+        p["user"] = osm_dbuser;
         p["password"]="";
         p["estimate_extent"]=false;
         p["extent"]="-20037508,-19929239,20037508,19929239";
