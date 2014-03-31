@@ -538,12 +538,12 @@ int main ( int argc , char** argv)
         p["host"]="sql-mapnik";
         p["port"]=5432;
 #endif
-        p["dbname"]="osm_mapnik";
+        p["dbname"]="gis";
         p["user"]="dschwen";
         p["password"]="";
         p["estimate_extent"]=false;
         p["extent"]="-20037508,-19929239,20037508,19929239";
-        p["table"]="(SELECT way, waterway, \"natural\" from planet_polygon where ( waterway in ('riverbank','dock') ) or ( \"natural\" in ('water','bay','wetland','wood', 'grassland','fell') ) ) as foo";
+        p["table"]="(SELECT way, waterway, \"natural\" from planet_osm_polygon where ( waterway in ('riverbank','dock') ) or ( \"natural\" in ('water','bay','wetland','wood', 'grassland','fell') ) ) as foo";
 
         layer lyr("Natural"); 
         lyr.set_datasource(datasource_cache::instance()->create(p));
@@ -589,12 +589,12 @@ int main ( int argc , char** argv)
         p["host"]="sql-mapnik";
         p["port"]=5432;
 #endif
-        p["dbname"]="osm_mapnik";
+        p["dbname"]="gis";
         p["user"]="dschwen";
         p["password"]="";
         p["estimate_extent"]=false;
         p["extent"]="-20037508,-19929239,20037508,19929239";
-        p["table"]="(SELECT way, landuse,leisure from planet_polygon where landuse in ('military','railway','commercial','industrial','residential','retail','basin','salt_pond','orchard','cemetary','meadow','village_green','forrest','recreation_ground') or leisure in ('dog_park','garden','park','pitch','stadium') ) as foo";
+        p["table"]="(SELECT way, landuse,leisure from planet_osm_polygon where landuse in ('military','railway','commercial','industrial','residential','retail','basin','salt_pond','orchard','cemetary','meadow','village_green','forrest','recreation_ground') or leisure in ('dog_park','garden','park','pitch','stadium') ) as foo";
 
         layer lyr("Built-up Areas");
         lyr.set_datasource(datasource_cache::instance()->create(p));
@@ -628,12 +628,12 @@ int main ( int argc , char** argv)
         p["host"]="sql-mapnik";
         p["port"]=5432;
 #endif
-        p["dbname"]="osm_mapnik";
+        p["dbname"]="gis";
         p["user"]="dschwen";
         p["password"]="";
         p["estimate_extent"]=false;
         p["extent"]="-20037508,-19929239,20037508,19929239";
-        p["table"]="(SELECT way,waterway from planet_line where waterway in ('canal','river','stream')) as foo";
+        p["table"]="(SELECT way,waterway from planet_osm_line where waterway in ('canal','river','stream')) as foo";
 
         layer lyr("Streams");
         lyr.set_datasource(datasource_cache::instance()->create(p));
@@ -680,12 +680,12 @@ int main ( int argc , char** argv)
         p["host"]="sql-mapnik";
         p["port"]=5432;
 #endif
-        p["dbname"]="osm_mapnik";
+        p["dbname"]="gis";
         p["user"]="dschwen";
         p["password"]="";
         p["estimate_extent"]=false;
         p["extent"]="-20037508,-19929239,20037508,19929239";
-        p["table"]="(SELECT way,route from planet_line where route in ('ferry')) as foo";
+        p["table"]="(SELECT way,route from planet_osm_line where route in ('ferry')) as foo";
 
 
         layer lyr("Ferry Lines");
@@ -707,12 +707,12 @@ int main ( int argc , char** argv)
         p["host"]="sql-mapnik";
         p["port"]=5432;
 #endif
-        p["dbname"]="osm_mapnik";
+        p["dbname"]="gis";
         p["user"]="dschwen";
         p["password"]="";
         p["estimate_extent"]=false;
         p["extent"]="-20037508,-19929239,20037508,19929239";
-        p["table"]="(SELECT way,railway from planet_line where railway in ('rail','preserved')) as foo";
+        p["table"]="(SELECT way,railway from planet_osm_line where railway in ('rail','preserved')) as foo";
 
         layer lyr("Railroads");
         lyr.set_datasource(datasource_cache::instance()->create(p));
@@ -733,12 +733,12 @@ int main ( int argc , char** argv)
         p["host"]="sql-mapnik";
         p["port"]=5432;
 #endif
-        p["dbname"]="osm_mapnik";
+        p["dbname"]="gis";
         p["user"]="dschwen";
         p["password"]="";
         p["estimate_extent"]=false;
         p["extent"]="-20037508,-19929239,20037508,19929239";
-        p["table"]="(SELECT * from planet_line where highway in ('track','path')) as foo";
+        p["table"]="(SELECT * from planet_osm_line where highway in ('track','path')) as foo";
 
         layer lyr("GrayRoads");
         lyr.set_datasource(datasource_cache::instance()->create(p));
@@ -759,12 +759,12 @@ int main ( int argc , char** argv)
         p["host"]="sql-mapnik";
         p["port"]=5432;
 #endif
-        p["dbname"]="osm_mapnik";
+        p["dbname"]="gis";
         p["user"]="dschwen";
         p["password"]="";
         p["estimate_extent"]=false;
         p["extent"]="-20037508,-19929239,20037508,19929239";
-        p["table"]="(SELECT way from planet_line where highway in ('residential','tertiary','tertiary_link','unclassified','service')) as foo";
+        p["table"]="(SELECT way from planet_osm_line where highway in ('residential','tertiary','tertiary_link','unclassified','service')) as foo";
 
         layer lyr("WhiteRoads");
         lyr.set_datasource(datasource_cache::instance()->create(p));
@@ -785,12 +785,12 @@ int main ( int argc , char** argv)
         p["host"]="sql-mapnik";
         p["port"]=5432;
 #endif
-        p["dbname"]="osm_mapnik";
+        p["dbname"]="gis";
         p["user"]="dschwen";
         p["password"]="";
         p["estimate_extent"]=false;
         p["extent"]="-20037508,-19929239,20037508,19929239";
-        p["table"]="(SELECT way from planet_line where highway in ('primary','primary_link','secondary','secondary_link')) as foo";
+        p["table"]="(SELECT way from planet_osm_line where highway in ('primary','primary_link','secondary','secondary_link')) as foo";
 
         layer lyr("Highway-border");
         lyr.set_datasource(datasource_cache::instance()->create(p));
@@ -811,12 +811,12 @@ int main ( int argc , char** argv)
         p["host"]="sql-mapnik";
         p["port"]=5432;
 #endif
-        p["dbname"]="osm_mapnik";
+        p["dbname"]="gis";
         p["user"]="dschwen";
         p["password"]="";
         p["estimate_extent"]=false;
         p["extent"]="-20037508,-19929239,20037508,19929239";
-        p["table"]="(SELECT way from planet_roads where highway in ('motorway','motorway_link','trunk','trunk_link')) as foo";
+        p["table"]="(SELECT way from planet_osm_roads where highway in ('motorway','motorway_link','trunk','trunk_link')) as foo";
 
         layer lyr("Highway-border");
         lyr.set_datasource(datasource_cache::instance()->create(p));
