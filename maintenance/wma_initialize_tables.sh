@@ -1,10 +1,10 @@
 #!/bin/bash
 
-server=localhost
+server=$1
 echo server $server
-mysql -h${server} -e "CREATE DATABASE IF NOT EXISTS wma;"
-mysql -h${server} wma < wma_schema.sql
-mysql -h${server} wma < wma_storedprocedures.sql
+#mysql -h${server} -e "CREATE DATABASE IF NOT EXISTS wma;"
+#mysql -h${server} wma < wma_schema.sql
+mysql --defaults-file=~/replica.my.cnf  -h${server}wiki.labsdb p50380g50921__wma_p < wma_storedprocedures.sql
 
 
 #mysql -h${server} u_dschwen < wma2_schema.sql

@@ -183,7 +183,7 @@ int tilerequest( int x, int y, int z )
         sprintf( request, reqtemp, tilesize, tilesize, Alon, Blat, Blon, Alat );
         sprintf( url, baseurl, request );
         len = http_fetch( url, &buf );
-        printf(" downloaded: %d bytes\n", len );
+        printf(" downloaded: %d bytes\nfrom: %s\n", len, url );
 
         if( !ilLoadL( IL_JPG, buf, len ) )
         {
