@@ -538,7 +538,7 @@ int main ( int argc , char** argv)
         p["host"]="localhost";
         p["port"]=4444;
 #else
-        p["host"]="sql-mapnik";
+        p["host"]="osmdb.eqiad.wmnet";
         p["port"]=5432;
 #endif
         p["dbname"] = osm_dbname;
@@ -589,7 +589,7 @@ int main ( int argc , char** argv)
         p["host"]="localhost";
         p["port"]=4444;
 #else
-        p["host"]="sql-mapnik";
+        p["host"]="osmdb.eqiad.wmnet";
         p["port"]=5432;
 #endif
         p["dbname"] = osm_dbname;
@@ -628,7 +628,7 @@ int main ( int argc , char** argv)
         p["host"]="localhost";
         p["port"]=4444;
 #else
-        p["host"]="sql-mapnik";
+        p["host"]="osmdb.eqiad.wmnet";
         p["port"]=5432;
 #endif
         p["dbname"] = osm_dbname;
@@ -680,7 +680,7 @@ int main ( int argc , char** argv)
         p["host"]="localhost";
         p["port"]=4444;
 #else
-        p["host"]="sql-mapnik";
+        p["host"]="osmdb.eqiad.wmnet";
         p["port"]=5432;
 #endif
         p["dbname"] = osm_dbname;
@@ -707,7 +707,7 @@ int main ( int argc , char** argv)
         p["host"]="localhost";
         p["port"]=4444;
 #else
-        p["host"]="sql-mapnik";
+        p["host"]="osmdb.eqiad.wmnet";
         p["port"]=5432;
 #endif
         p["dbname"] = osm_dbname;
@@ -733,7 +733,7 @@ int main ( int argc , char** argv)
         p["host"]="localhost";
         p["port"]=4444;
 #else
-        p["host"]="sql-mapnik";
+        p["host"]="osmdb.eqiad.wmnet";
         p["port"]=5432;
 #endif
         p["dbname"] = osm_dbname;
@@ -759,7 +759,7 @@ int main ( int argc , char** argv)
         p["host"]="localhost";
         p["port"]=4444;
 #else
-        p["host"]="sql-mapnik";
+        p["host"]="osmdb.eqiad.wmnet";
         p["port"]=5432;
 #endif
         p["dbname"] = osm_dbname;
@@ -785,7 +785,7 @@ int main ( int argc , char** argv)
         p["host"]="localhost";
         p["port"]=4444;
 #else
-        p["host"]="sql-mapnik";
+        p["host"]="osmdb.eqiad.wmnet";
         p["port"]=5432;
 #endif
         p["dbname"] = osm_dbname;
@@ -811,7 +811,7 @@ int main ( int argc , char** argv)
         p["host"]="localhost";
         p["port"]=4444;
 #else
-        p["host"]="sql-mapnik";
+        p["host"]="osmdb.eqiad.wmnet";
         p["port"]=5432;
 #endif
         p["dbname"] = osm_dbname;
