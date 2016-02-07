@@ -30,7 +30,7 @@ use Switch;
 use IO::File;
 
 $usstates = "Alabama|Alaska|Arizona|Arkansas|California|Colorado|Connecticut|Delaware|Florida|Georgia|Hawaii|Idaho|Illinois|Indiana|Iowa|Kansas|Kentucky|Louisiana|Maine|Maryland|Massachusetts|Michigan|Minnesota|Mississippi|Missouri|Montana|Nebraska|Nevada|New Hampshire|New Jersey|New Mexico|New York|North Carolina|North Dakota|Ohio|Oklahoma|Oregon|Pennsylvania|Rhode Island|South Carolina|South Dakota|Tennessee|Texas|Utah|Vermont|Virginia|Washington|West Virginia|Wisconsin|Wyoming";
-$auterritories = "New South Wales|Victoria|South Australia|Queensland|Western Australia|Northern Territory";
+$auterritories = "New South Wales|Victoria|South Australia|Queensland|Western Australia|Northern Territory|Tasmania|Australian Capital Territory";
 $cdnterrprov = "Ontario|Quebec|Nova Scotia|New Brunswick|Manitoba|British Columbia|Prince Edward Island|Saskatchewan|Alberta|Newfoundland and Labrador|Northwest Territories|Yukon|Nunavut";
 $country = "Democratic Republic of the Congo";
 
@@ -53,7 +53,7 @@ my $db = DBI->connect(
   undef, undef) or die "Error: $DBI::err, $DBI::errstr";
 
 print "Connected.\n";
-  
+
 my $wmadatabase = "p50380g50921__wma_p";
 my $gheldatabase = "p50380g50921__ghel_p";
 
@@ -80,12 +80,12 @@ undef @insert;
 #    $query = "create temporary table $wmadatabase.compics ( page_id int, page_title varchar(255), el_to blob, img_width int, img_height int )";
 #    110     $sth = $db->prepare( $query );
 #    111     $sth->execute;
-#    112 
+#    112
 #    113     print STDERR "Parparing: fetching all images with coordinates.\n";
 #    114     $query = "insert /* SLOW_OK */ into $wmadatabase.compics SELECT page_id, page_title, el_to, img_width, img_height from image, page, externallinks where im    g_name = page_title and page_namespace=6 and el_to like '".$geohackurl."%' and el_from = page_id";
 #    115     $sth = $db->prepare( $query );
 #    116     $sth->execute;
-#    117 
+#    117
 #    118     $query = "select /* SLOW_OK */ page_title, el_to, 0, GROUP_CONCAT( DISTINCT cl_to SEPARATOR '|'), img_width, img_height from $wmadatabase.compics left joi    n categorylinks on page_id = cl_from group by page_id";
 #    119 }
 #    12
@@ -100,11 +100,11 @@ if( $langid == 4 ) {
 
   print STDERR "Parparing: fetching all images with camera coordinates.\n";
 $query = <<QEND
-  INSERT INTO  $wmadatabase.compics SELECT /* SLOW_OK */ 
-    page_id, gc_lat, gc_lon, page_title, gc_head, 
+  INSERT INTO  $wmadatabase.compics SELECT /* SLOW_OK */
+    page_id, gc_lat, gc_lon, page_title, gc_head,
     CASE gc_globe WHEN '' THEN 'Earth' ELSE gc_globe END
-  FROM $gheldatabase.coord_${lang}wiki c, page 
-    WHERE page_namespace=6 
+  FROM $gheldatabase.coord_${lang}wiki c, page
+    WHERE page_namespace=6
       AND c.gc_from=page_id
       AND gc_lat<=90.0 AND gc_lat>=-90.0
       AND ( c.gc_type="camera" OR c.gc_type IS NULL )
@@ -124,12 +124,12 @@ QEND
   $sth->execute or die "Error building index: ".$db->errstr;
 
 $query = <<QEND
-  SELECT /* SLOW_OK */ 
+  SELECT /* SLOW_OK */
     pid, lat, lon, img_width, img_height, head, title, t.id, globe,
     GROUP_CONCAT( DISTINCT cl_to SEPARATOR '|')
-  FROM  image, $wmadatabase.compics 
-    LEFT JOIN categorylinks ON pid = cl_from 
-    LEFT JOIN $wmadatabase.wma_tile t ON t.z=$maxzoom 
+  FROM  image, $wmadatabase.compics
+    LEFT JOIN categorylinks ON pid = cl_from
+    LEFT JOIN $wmadatabase.wma_tile t ON t.z=$maxzoom
       AND t.x=FLOOR( (lon-FLOOR(lon/360)*360) * $fac ) AND t.y=FLOOR( (lat+90.0) * $fac )
     WHERE title = img_name
     GROUP BY pid
@@ -137,15 +137,15 @@ QEND
 ;
 } else {
 $query = <<QEND
-  SELECT /* SLOW_OK */ 
+  SELECT /* SLOW_OK */
     page_id, gc_lat, gc_lon, page_len, gc_size, gc_type,
     CASE WHEN gc_primary=1 THEN page_title ELSE gc_name END, t.id, gc_primary,
     CASE gc_globe WHEN '' THEN 'Earth' ELSE gc_globe END
-  FROM page, $gheldatabase.coord_${lang}wiki c 
+  FROM page, $gheldatabase.coord_${lang}wiki c
     LEFT JOIN $wmadatabase.blacklist b ON b.gc_from=c.gc_from
-    LEFt JOIN $wmadatabase.wma_tile t ON t.z=$maxzoom 
+    LEFt JOIN $wmadatabase.wma_tile t ON t.z=$maxzoom
       AND t.x=FLOOR( (gc_lon-FLOOR(gc_lon/360)*360) * $fac ) AND t.y=FLOOR( (gc_lat+90.0) * $fac )
-    WHERE page_namespace=0 AND c.gc_from=page_id  
+    WHERE page_namespace=0 AND c.gc_from=page_id
       AND gc_lat<=90.0 AND gc_lat>=-90.0
       AND b.gc_from IS NULL;
 QEND
@@ -168,13 +168,13 @@ $sth2 = $db2->prepare( $query ) or die;
 $rows = $sth2->execute or die;
 print "Delete $rows label connectors from previous run.\n" if( $rows > 0 );
 
-while( @row = $sth->fetchrow() ) 
+while( @row = $sth->fetchrow() )
 {
   if( $langid == 4 ) {
     ( $pageid, $lat, $lon, $imgwidth, $imgheight, $heading, $name, $tileid, $globe, $catlist ) = @row[0..9];
     next if( !( $name =~ /\.jpg$/i || $name =~ /\.jpeg$/i ) );
     $style = -1;
-    
+
     # 4 points for each megapixel
     $weight = 4 * int( ( $imgwidth * $imgheight ) / ( 1024 * 1024 ) );
     $style = -2 if( $weight == 0 );
@@ -188,10 +188,10 @@ while( @row = $sth->fetchrow() )
       if( /^Valued_images/i )       { $weight+=30; }
       if( /^Pictures_of_the_day/i ) { $weight+=20; }
     }
-    
+
     # numerical heading
     if( $heading ne '' && $heading > -360 && $heading < 360 ) {
-      $heading =  int(( (int($heading)+360) % 360 ) / 22.5 + 0.5) % 16; 
+      $heading =  int(( (int($heading)+360) % 360 ) / 22.5 + 0.5) % 16;
       $weight += 10;
     } else {
       $heading = 18;
@@ -208,7 +208,7 @@ while( @row = $sth->fetchrow() )
     {
       case "mountain"  { $style = 2; }
       case "country"   { $style = 3; }
-      case "city"      { 
+      case "city"      {
         if($pop<1000000)  { $style = 8; }
         if($pop<500000)   { $style = 7; }
         if($pop<100000)   { $style = 6; }
@@ -225,7 +225,7 @@ while( @row = $sth->fetchrow() )
     elsif ( $name =~ /^(.*), ($usstates|$auterritories|$cdnterrprov|$country)$/ ) { $name = "$1"; }
     elsif ( $name =~ /^(.*) \(($usstates)\)$/ )                          { $name = "$1"; }
     elsif ( $name =~ /^(.*) \(i.* County, ($usstates)\)$/ )              { $name = "$1"; }
-    
+
     # calculate final weight
     $weight = ( int($weight) + $pop/20 - length($name)**2 ) * $primary;
   }
@@ -250,7 +250,7 @@ while( @row = $sth->fetchrow() )
     $sth2 = $db2->prepare( $query ) or die;
     $rows = $sth2->execute or die;
     $tileid = $db2->{ q{mysql_insertid} };
-  } 
+  }
 
   # insert labels
   push(@insert,"CALL InsertLabel('$pageid','$langid',".($db2->quote($name)).",'$style','$globe','$lat','$lon','$weight','$tileid','$rev')");
@@ -286,4 +286,3 @@ if( scalar(@insert) > 0 ) {
   #}
   undef @insert;
 }
-
