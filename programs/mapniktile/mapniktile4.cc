@@ -68,8 +68,9 @@ int main ( int argc , char** argv)
     double thickfac = 1.0;
     if ( zoom >= 6 && zoom < 11 ) thickfac = 1.5 / ( 12.0 - double(zoom) );
 
-    datasource_cache::instance().register_datasources("/usr/lib/mapnik/2.0/input"); 
-    freetype_engine::register_font("/opt/ts/share/fonts/DejaVuSans.ttf");
+    std::string plugins_dir = MAPNIK_PLUGINS;
+    datasource_cache::instance().register_datasources(plugins_dir);
+    freetype_engine::register_font("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf");
     
     Map m(128,128);
 
