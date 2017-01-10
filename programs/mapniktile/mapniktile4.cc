@@ -33,6 +33,8 @@
 #include <mapnik/agg_renderer.hpp>
 #include <mapnik/color_factory.hpp>
 #include <mapnik/image_util.hpp>
+#include <mapnik/feature_type_style.hpp>
+
 
 #include <iostream>
 
@@ -66,7 +68,7 @@ int main ( int argc , char** argv)
     double thickfac = 1.0;
     if ( zoom >= 6 && zoom < 11 ) thickfac = 1.5 / ( 12.0 - double(zoom) );
 
-    datasource_cache::instance()->register_datasources("/usr/lib/mapnik/2.0/input"); 
+    datasource_cache::instance().register_datasources("/usr/lib/mapnik/2.0/input"); 
     freetype_engine::register_font("/opt/ts/share/fonts/DejaVuSans.ttf");
     
     Map m(128,128);
@@ -463,7 +465,7 @@ int main ( int argc , char** argv)
         p["file"]="shp/oceansea";
         
         layer lyr("Ocean"); 
-        lyr.set_datasource(datasource_cache::instance()->create(p));
+        lyr.set_datasource(datasource_cache::instance().create(p));
         lyr.add_style("ocean");    
         m.addLayer(lyr);
     }  
@@ -474,7 +476,7 @@ int main ( int argc , char** argv)
         p["file"]="shp/osm/world_boundaries/processed_p";
 
         layer lyr("Coastlines");
-        lyr.set_datasource(datasource_cache::instance()->create(p));
+        lyr.set_datasource(datasource_cache::instance().create(p));
         lyr.set_srs("+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +no_defs");
         lyr.add_style("landmass");    
         m.addLayer(lyr);
@@ -488,7 +490,7 @@ int main ( int argc , char** argv)
         p["file"]="shp/swampa";
         
         layer lyr("Swamp"); 
-        lyr.set_datasource(datasource_cache::instance()->create(p));
+        lyr.set_datasource(datasource_cache::instance().create(p));
         lyr.add_style("swamp");    
         m.addLayer(lyr);
     }  
@@ -500,7 +502,7 @@ int main ( int argc , char** argv)
         p["file"]="shp/seaicea";
 
         layer lyr("Seaice");
-        lyr.set_datasource(datasource_cache::instance()->create(p));
+        lyr.set_datasource(datasource_cache::instance().create(p));
         lyr.add_style("seaice");
         lyr.add_style("seaice2");
         m.addLayer(lyr);
@@ -513,7 +515,7 @@ int main ( int argc , char** argv)
         p["file"]="shp/grassa";
         
         layer lyr("Grassland"); 
-        lyr.set_datasource(datasource_cache::instance()->create(p));
+        lyr.set_datasource(datasource_cache::instance().create(p));
         lyr.add_style("grassland");    
         m.addLayer(lyr);
     }  
@@ -525,7 +527,7 @@ int main ( int argc , char** argv)
         p["file"]="shp/treesa";
         
         layer lyr("Trees"); 
-        lyr.set_datasource(datasource_cache::instance()->create(p));
+        lyr.set_datasource(datasource_cache::instance().create(p));
         lyr.add_style("trees");    
         m.addLayer(lyr);
     }  
@@ -533,23 +535,23 @@ int main ( int argc , char** argv)
     // Lakes  polygons
     if( zoom >= 8 ) {
         parameters p;
-        p["type"]="postgis";
+        p["type"] = "postgis";
 #ifdef DEBUGPOSTGIS
-        p["host"]="localhost";
-        p["port"]=4444;
+        p["host"] = "localhost";
+        p["port"] = "4444";
 #else
         p["host"]="osmdb.eqiad.wmnet";
-        p["port"]=5432;
+        p["port"] = "5432";
 #endif
         p["dbname"] = osm_dbname;
         p["user"] = osm_dbuser;
-        p["password"]="";
-        p["estimate_extent"]=false;
-        p["extent"]="-20037508,-19929239,20037508,19929239";
-        p["table"]="(SELECT way, waterway, \"natural\" from planet_osm_polygon where ( waterway in ('riverbank','dock') ) or ( \"natural\" in ('water','bay','wetland','wood', 'grassland','fell') ) ) as foo";
+        p["password"] = "";
+        p["estimate_extent"] = "false";
+        p["extent"] = "-20037508,-19929239,20037508,19929239";
+        p["table"] = "(SELECT way, waterway, \"natural\" from planet_osm_polygon where ( waterway in ('riverbank','dock') ) or ( \"natural\" in ('water','bay','wetland','wood', 'grassland','fell') ) ) as foo";
 
         layer lyr("Natural"); 
-        lyr.set_datasource(datasource_cache::instance()->create(p));
+        lyr.set_datasource(datasource_cache::instance().create(p));
         lyr.set_srs("+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +no_defs");
         lyr.add_style("lakes2");    
         lyr.add_style("swamp2");    
@@ -559,11 +561,11 @@ int main ( int argc , char** argv)
     } else 
     {
         parameters p;
-        p["type"]="shape";
-        p["file"]="shp/inwatera";
+        p["type"] = "shape";
+        p["file"] = "shp/inwatera";
         
         layer lyr("Lakes"); 
-        lyr.set_datasource(datasource_cache::instance()->create(p));
+        lyr.set_datasource(datasource_cache::instance().create(p));
         lyr.add_style("lakes");    
         m.addLayer(lyr);
     }  
@@ -572,11 +574,11 @@ int main ( int argc , char** argv)
     // Landice
     {
         parameters p;
-        p["type"]="shape";
-        p["file"]="shp/landicea";
+        p["type"] = "shape";
+        p["file"] = "shp/landicea";
         
         layer lyr("Landice"); 
-        lyr.set_datasource(datasource_cache::instance()->create(p));
+        lyr.set_datasource(datasource_cache::instance().create(p));
         lyr.add_style("landice");    
         m.addLayer(lyr);
     }
@@ -584,23 +586,23 @@ int main ( int argc , char** argv)
     // Builtup
     if(zoom >= 8 ) {
         parameters p;
-        p["type"]="postgis";
+        p["type"] = "postgis";
 #ifdef DEBUGPOSTGIS
-        p["host"]="localhost";
-        p["port"]=4444;
+        p["host"] = "localhost";
+        p["port"] = "4444";
 #else
-        p["host"]="osmdb.eqiad.wmnet";
-        p["port"]=5432;
+        p["host"] = "osmdb.eqiad.wmnet";
+        p["port"] = "5432";
 #endif
         p["dbname"] = osm_dbname;
         p["user"] = osm_dbuser;
-        p["password"]="";
-        p["estimate_extent"]=false;
-        p["extent"]="-20037508,-19929239,20037508,19929239";
-        p["table"]="(SELECT way, landuse,leisure from planet_osm_polygon where landuse in ('military','railway','commercial','industrial','residential','retail','basin','salt_pond','orchard','cemetary','meadow','village_green','forrest','recreation_ground') or leisure in ('dog_park','garden','park','pitch','stadium') ) as foo";
+        p["password"] = "";
+        p["estimate_extent"] = "false";
+        p["extent"] = "-20037508,-19929239,20037508,19929239";
+        p["table"] = "(SELECT way, landuse,leisure from planet_osm_polygon where landuse in ('military','railway','commercial','industrial','residential','retail','basin','salt_pond','orchard','cemetary','meadow','village_green','forrest','recreation_ground') or leisure in ('dog_park','garden','park','pitch','stadium') ) as foo";
 
         layer lyr("Built-up Areas");
-        lyr.set_datasource(datasource_cache::instance()->create(p));
+        lyr.set_datasource(datasource_cache::instance().create(p));
         lyr.set_srs("+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +no_defs");
         lyr.add_style("builtup2");   
         lyr.add_style("offlimits");   
@@ -615,7 +617,7 @@ int main ( int argc , char** argv)
         p["file"]="shp/osm/world_boundaries/builtup_area";
 
         layer lyr("Built-up Areas");
-        lyr.set_datasource(datasource_cache::instance()->create(p));
+        lyr.set_datasource(datasource_cache::instance().create(p));
         lyr.add_style("builtup");    
         m.addLayer(lyr);
     }
@@ -623,23 +625,23 @@ int main ( int argc , char** argv)
     // Streams
     if(zoom >= 8 ) {
         parameters p;
-        p["type"]="postgis";
+        p["type"] = "postgis";
 #ifdef DEBUGPOSTGIS
-        p["host"]="localhost";
-        p["port"]=4444;
+        p["host"] = "localhost";
+        p["port"] = "4444";
 #else
-        p["host"]="osmdb.eqiad.wmnet";
-        p["port"]=5432;
+        p["host"] = "osmdb.eqiad.wmnet";
+        p["port"] = "5432";
 #endif
         p["dbname"] = osm_dbname;
         p["user"] = osm_dbuser;
-        p["password"]="";
-        p["estimate_extent"]=false;
-        p["extent"]="-20037508,-19929239,20037508,19929239";
-        p["table"]="(SELECT way,waterway from planet_osm_line where waterway in ('canal','river','stream')) as foo";
+        p["password"] = "";
+        p["estimate_extent"] = "false";
+        p["extent"] = "-20037508,-19929239,20037508,19929239";
+        p["table"] = "(SELECT way,waterway from planet_osm_line where waterway in ('canal','river','stream')) as foo";
 
         layer lyr("Streams");
-        lyr.set_datasource(datasource_cache::instance()->create(p));
+        lyr.set_datasource(datasource_cache::instance().create(p));
         lyr.set_srs("+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +no_defs");
         lyr.add_style("canal");    
         lyr.add_style("waterway");    
@@ -650,11 +652,11 @@ int main ( int argc , char** argv)
     // Regional Borders
     {
         parameters p;
-        p["type"]="shape";
-        p["file"]="shp/polbndl";
+        p["type"] = "shape";
+        p["file"] = "shp/polbndl";
 
         layer lyr("Regional Borders");
-        lyr.set_datasource(datasource_cache::instance()->create(p));
+        lyr.set_datasource(datasource_cache::instance().create(p));
         lyr.add_style("border2");    
         lyr.add_style("border1");    
         m.addLayer(lyr);
@@ -663,11 +665,11 @@ int main ( int argc , char** argv)
     // National Parks
     if(zoom >= 0 ) {
         parameters p;
-        p["type"]="shape";
-        p["file"]="shp/other/nps_boundary";
+        p["type"] = "shape";
+        p["file"] = "shp/other/nps_boundary";
 
         layer lyr("National Parks");
-        lyr.set_datasource(datasource_cache::instance()->create(p));
+        lyr.set_datasource(datasource_cache::instance().create(p));
         lyr.add_style("usnps");    
         m.addLayer(lyr);
     }
@@ -675,24 +677,24 @@ int main ( int argc , char** argv)
     // Ferry Lines, Railroadbridges, Causeways
     if(zoom >= 7 ) {
         parameters p;
-        p["type"]="postgis";
+        p["type"] = "postgis";
 #ifdef DEBUGPOSTGIS
-        p["host"]="localhost";
-        p["port"]=4444;
+        p["host"] = "localhost";
+        p["port"] = "4444";
 #else
-        p["host"]="osmdb.eqiad.wmnet";
-        p["port"]=5432;
+        p["host"] = "osmdb.eqiad.wmnet";
+        p["port"] = "5432";
 #endif
         p["dbname"] = osm_dbname;
         p["user"] = osm_dbuser;
-        p["password"]="";
-        p["estimate_extent"]=false;
+        p["password"] = "";
+        p["estimate_extent"] = "false";
         p["extent"]="-20037508,-19929239,20037508,19929239";
         p["table"]="(SELECT way,route from planet_osm_line where route in ('ferry')) as foo";
 
 
         layer lyr("Ferry Lines");
-        lyr.set_datasource(datasource_cache::instance()->create(p));
+        lyr.set_datasource(datasource_cache::instance().create(p));
         lyr.set_srs("+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +no_defs");
         lyr.add_style("ferry");   
         // maybe add tram 
@@ -702,23 +704,23 @@ int main ( int argc , char** argv)
     // Railroads
     if(zoom >= 8 ) {
         parameters p;
-        p["type"]="postgis";
+        p["type"] = "postgis";
 #ifdef DEBUGPOSTGIS
-        p["host"]="localhost";
-        p["port"]=4444;
+        p["host"] = "localhost";
+        p["port"] = "4444";
 #else
-        p["host"]="osmdb.eqiad.wmnet";
-        p["port"]=5432;
+        p["host"] = "osmdb.eqiad.wmnet";
+        p["port"] = "5432";
 #endif
         p["dbname"] = osm_dbname;
         p["user"] = osm_dbuser;
-        p["password"]="";
-        p["estimate_extent"]=false;
-        p["extent"]="-20037508,-19929239,20037508,19929239";
-        p["table"]="(SELECT way,railway from planet_osm_line where railway in ('rail','preserved')) as foo";
+        p["password"] = "";
+        p["estimate_extent"] = "false";
+        p["extent"] = "-20037508,-19929239,20037508,19929239";
+        p["table"] = "(SELECT way,railway from planet_osm_line where railway in ('rail','preserved')) as foo";
 
         layer lyr("Railroads");
-        lyr.set_datasource(datasource_cache::instance()->create(p));
+        lyr.set_datasource(datasource_cache::instance().create(p));
         lyr.set_srs("+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +no_defs");
         lyr.add_style("raillines");    
         lyr.add_style("raillines2");    
@@ -728,23 +730,23 @@ int main ( int argc , char** argv)
     // Unpaved
     if(zoom >= 11 ) {
         parameters p;
-        p["type"]="postgis";
+        p["type"] = "postgis";
 #ifdef DEBUGPOSTGIS
-        p["host"]="localhost";
-        p["port"]=4444;
+        p["host"] = "localhost";
+        p["port"] = "4444";
 #else
-        p["host"]="osmdb.eqiad.wmnet";
-        p["port"]=5432;
+        p["host"] = "osmdb.eqiad.wmnet";
+        p["port"] = "5432";
 #endif
         p["dbname"] = osm_dbname;
         p["user"] = osm_dbuser;
-        p["password"]="";
-        p["estimate_extent"]=false;
-        p["extent"]="-20037508,-19929239,20037508,19929239";
-        p["table"]="(SELECT * from planet_osm_line where highway in ('track','path')) as foo";
+        p["password"] = "";
+        p["estimate_extent"] = "false";
+        p["extent"] = "-20037508,-19929239,20037508,19929239";
+        p["table"] = "(SELECT * from planet_osm_line where highway in ('track','path')) as foo";
 
         layer lyr("GrayRoads");
-        lyr.set_datasource(datasource_cache::instance()->create(p));
+        lyr.set_datasource(datasource_cache::instance().create(p));
         lyr.set_srs("+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +no_defs");
         lyr.add_style("grayroad-border");    
         lyr.add_style("grayroad-fill");    
@@ -754,23 +756,23 @@ int main ( int argc , char** argv)
     // Residential
     if(zoom >= 10 ) { 
         parameters p;
-        p["type"]="postgis";
+        p["type"] = "postgis";
 #ifdef DEBUGPOSTGIS
-        p["host"]="localhost";
-        p["port"]=4444;
+        p["host"] = "localhost";
+        p["port"] = "4444";
 #else
-        p["host"]="osmdb.eqiad.wmnet";
-        p["port"]=5432;
+        p["host"] = "osmdb.eqiad.wmnet";
+        p["port"] = "5432";
 #endif
         p["dbname"] = osm_dbname;
         p["user"] = osm_dbuser;
-        p["password"]="";
-        p["estimate_extent"]=false;
-        p["extent"]="-20037508,-19929239,20037508,19929239";
-        p["table"]="(SELECT way from planet_osm_line where highway in ('residential','tertiary','tertiary_link','unclassified','service')) as foo";
+        p["password"] = "";
+        p["estimate_extent"] = "false";
+        p["extent"] = "-20037508,-19929239,20037508,19929239";
+        p["table"] = "(SELECT way from planet_osm_line where highway in ('residential','tertiary','tertiary_link','unclassified','service')) as foo";
 
         layer lyr("WhiteRoads");
-        lyr.set_datasource(datasource_cache::instance()->create(p));
+        lyr.set_datasource(datasource_cache::instance().create(p));
         lyr.set_srs("+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +no_defs");
         lyr.add_style("trail-border");    
         lyr.add_style("trail-fill");    
@@ -780,23 +782,23 @@ int main ( int argc , char** argv)
     // Medium roads
     if(zoom >= 7 ) {
         parameters p;
-        p["type"]="postgis";
+        p["type"] = "postgis";
 #ifdef DEBUGPOSTGIS
-        p["host"]="localhost";
-        p["port"]=4444;
+        p["host"] = "localhost";
+        p["port"] = "4444";
 #else
         p["host"]="osmdb.eqiad.wmnet";
-        p["port"]=5432;
+        p["port"] = "5432";
 #endif
         p["dbname"] = osm_dbname;
         p["user"] = osm_dbuser;
         p["password"]="";
-        p["estimate_extent"]=false;
+        p["estimate_extent"] = "false";
         p["extent"]="-20037508,-19929239,20037508,19929239";
         p["table"]="(SELECT way from planet_osm_line where highway in ('primary','primary_link','secondary','secondary_link')) as foo";
 
         layer lyr("Highway-border");
-        lyr.set_datasource(datasource_cache::instance()->create(p));
+        lyr.set_datasource(datasource_cache::instance().create(p));
         lyr.set_srs("+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +no_defs");
         lyr.add_style("road-border");    
         lyr.add_style("road-fill");    
@@ -806,23 +808,23 @@ int main ( int argc , char** argv)
     // Highways (roads with median)
     if(zoom >= 6 ) {
         parameters p;
-        p["type"]="postgis";
+        p["type"] = "postgis";
 #ifdef DEBUGPOSTGIS
-        p["host"]="localhost";
-        p["port"]=4444;
+        p["host"] = "localhost";
+        p["port"] = "4444";
 #else
-        p["host"]="osmdb.eqiad.wmnet";
-        p["port"]=5432;
+        p["host"] = "osmdb.eqiad.wmnet";
+        p["port"] = "5432";
 #endif
         p["dbname"] = osm_dbname;
         p["user"] = osm_dbuser;
-        p["password"]="";
-        p["estimate_extent"]=false;
+        p["password"] = "";
+        p["estimate_extent"] = "false";
         p["extent"]="-20037508,-19929239,20037508,19929239";
         p["table"]="(SELECT way from planet_osm_roads where highway in ('motorway','motorway_link','trunk','trunk_link')) as foo";
 
         layer lyr("Highway-border");
-        lyr.set_datasource(datasource_cache::instance()->create(p));
+        lyr.set_datasource(datasource_cache::instance().create(p));
         lyr.set_srs("+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +no_defs");
         lyr.add_style("highway-border");    
         lyr.add_style("highway-fill");    
