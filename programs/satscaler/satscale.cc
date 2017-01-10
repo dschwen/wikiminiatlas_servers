@@ -65,7 +65,9 @@ const int zoomlevel[max_zoomlevel+1] = {  3, 6, 12, 24, 48, 96, 192, 384, 768, 1
 
 const char *reqtemp = "GetMap&layers=global_mosaic&srs=EPSG:4326&width=%d&height=%d&bbox=%f,%f,%f,%f&format=image/jpeg&version=1.1.1&styles=default";
 //const char *reqtemp = "GetMap&layers=global_mosaic&srs=EPSG:4326&width=%d&height=%d&bbox=%f,%f,%f,%f&format=image/jpeg&version=1.1.1&styles=";
-const char *baseurl = "http://onearth.jpl.nasa.gov/wms.cgi?request=%s";
+//const char *baseurl = "http://onearth.jpl.nasa.gov/wms.cgi?request=%s";
+const char *baseurl = "http://map1.vis.earthdata.nasa.gov/twms-geo/twms.cgi?request=%s";
+
 
 // WMA tiles
 //const char *path  = "/projects/wma/www/tiles/mapnik/sat/%d/%d/%d_%d.png"; // z,y,y,x
@@ -188,7 +190,7 @@ int tilerequest( int x, int y, int z )
         if( !ilLoadL( IL_JPG, buf, len ) )
         {
           // produce a black tile if no valid satellite data was returned
-          printf( buf );
+          printf("%s", buf);
           ilTexImage( tilesize, tilesize, 0, 3, IL_RGB, IL_UNSIGNED_BYTE, 0 );
           ilClearImage();
 
@@ -311,10 +313,15 @@ int main( int argc, char *argv[] )
   //
   fprintf( stderr, "writing pid file.\n" );
   fp = fopen( "/tmp/wikiminiatlas.sat.pid", "wt" );
-  fprintf( fp, "%d", getpid() );
-  fclose( fp );
+  if (!fp)
+  {
+    fprintf(stderr, "Unable to write pid file.\n");
+    exit(1);
+  }
+  fprintf(fp, "%d", getpid());
+  fclose(fp);
 
-  fprintf( stderr, "initializing DevIL.\n" );
+  fprintf(stderr, "initializing DevIL.\n");
   ilInit();
   iluInit();
   ilClearColour( 0, 0 , 0 , 0 );
