@@ -41,9 +41,16 @@ ccr = cdb.cursor()
 
 n_tot = 0
 n_ins = 0
+n_fail = 0
 
 #
-# get larget pageid
+# clear out the temporary coordinates table
+#
+with tdb.cursor() as tcr:
+    tcr.execute("DELETE FROM coord_%" % lang)
+
+#
+# get largest pageid
 #
 ccr.execute('SELECT MAX(el_from) FROM externallinks')
 global_max_page = ccr.fetchone()[0];
@@ -75,16 +82,29 @@ while min_page <= global_max_page:
             pages.add(page_id)
             n_ins += 1
 
+page_id INT(8), lat FLOAT NOT NULL, lon FLOAT NOT NULL, pop INT(4) NOT NULL, style TINYINT, title VARBINARY(255), globe
         # process coordinates
-        # TODO
+        try:
+            geo = geolink.parse(row[3], row[1].replace('_', ' '), row[2]))
+            with tdb.cursor() as tcr:
+                geo['page_id'] = page_id
+                query = 'INSERT INTO coord_' + lang + ' (page_id, lat, lon, style, weight, title, globe) VALUES (%{page_id}, %{lat}, %{lon}, %{style}, %{weight}, %{title}, %{globe})'
+                tcr.execute(query, geo)
+                tdb.commit()
+        except:
+            print("Parse fail: ", row[3])
+            n_fail += 1
+            pass
 
         n_tot += 1
 
         if n_tot % 1000 == 0:
-            print("%d rows processed, %d pages inserted" % (n_tot, n_ins))
+            print("%d rows processed, %d pages inserted, %d unparsable" % (n_tot, n_ins, n_fail))
 
     min_page += step_page
     max_page += step_page
+
+print("Done. %d rows processed, %d pages inserted, %d unparsable" % (n_tot, n_ins, n_fail))
 
 #
 # pickle page id cache

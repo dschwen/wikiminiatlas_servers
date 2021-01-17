@@ -154,5 +154,6 @@ def parse(link, name, weight):
         'lat': lat,
         'lon': lon,
         'style': style,
-        'weight': weight
+        'weight': weight,
+        'title': name
     }
