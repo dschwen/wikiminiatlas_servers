@@ -1,6 +1,12 @@
 #!/usr/bin/env python3
 
+#
+# WikiMiniAtlas database update script (c) 2009-2021 Daniel Schwen
+# Licensed under the GPL3 license
+#
+
 import toolforge
+import geolink
 import pickle
 import sys
 
@@ -50,7 +56,7 @@ step_page = 20000
 min_page = 0
 max_page = min_page + step_page
 
-while min_page <= global_max_page: 
+while min_page <= global_max_page:
     query = "SELECT page_id, page_title, page_len, SUBSTRING(el_to, POSITION('geohack.php' IN el_to) + 12) AS params "\
             "FROM externallinks, page "\
             "WHERE page_namespace=0 AND page_id >= %d AND page_id < %d AND el_from = page_id AND el_to LIKE '%%geohack.php?%%' "\
@@ -86,4 +92,3 @@ while min_page <= global_max_page:
 pages_file = open(pages_file_name, "wb")
 pickle.dump(pages, pages_file)
 pages_file.close()
-

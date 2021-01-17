@@ -150,8 +150,8 @@ maxzoom = 14;
 #    12
 
 
-$start = time();
-fac = ((1<<maxzoom)*3)/180.0;
+fac = ((1 << maxzoom) * 3) / 180.0
+
 if( $langid == 4 ) {
   $query = "CREATE TEMPORARY TABLE $wmadatabase.compics ( pid INT, lat DOUBLE(11,8), lon DOUBLE(11,8), title VARCHAR(255), head FLOAT, globe ENUM('','Mercury','Ariel','Phobos','Deimos','Mars','Rhea','Oberon','Europa','Tethys','Pluto','Miranda','Titania','Phoebe','Enceladus','Venus','Moon','Hyperion','Triton','Ceres','Dione','Titan','Ganymede','Umbriel','Callisto','Jupiter','Io','Earth','Mimas','Iapetus') )";
   $sth = $db->prepare( $query );
