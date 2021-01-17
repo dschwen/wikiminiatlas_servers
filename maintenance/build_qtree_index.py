@@ -50,7 +50,7 @@ step_page = 20000
 min_page = 0
 max_page = min_page + step_page
 
-while min_page <= global_max_page: 
+while min_page <= global_max_page:
     query = "SELECT page_id, page_title, page_len, SUBSTRING(el_to, POSITION('geohack.php' IN el_to) + 12) AS params "\
             "FROM externallinks, page "\
             "WHERE page_namespace=0 AND page_id >= %d AND page_id < %d AND el_from = page_id AND el_to LIKE '%%geohack.php?%%' "\
@@ -87,56 +87,54 @@ pages_file = open(pages_file_name, "wb")
 pickle.dump(pages, pages_file)
 pages_file.close()
 
-usstates = "Alabama|Alaska|Arizona|Arkansas|California|Colorado|Connecticut|Delaware|Florida|Georgia|Hawaii|Idaho|Illinois|Indiana|Iowa|Kansas|Kentucky|Louisiana|Maine|Maryland|Massachusetts|Michigan|Minnesota|Mississippi|Missouri|Montana|Nebraska|Nevada|New Hampshire|New Jersey|New Mexico|New York|North Carolina|North Dakota|Ohio|Oklahoma|Oregon|Pennsylvania|Rhode Island|South Carolina|South Dakota|Tennessee|Texas|Utah|Vermont|Virginia|Washington|West Virginia|Wisconsin|Wyoming";
-$auterritories = "New South Wales|Victoria|South Australia|Queensland|Western Australia|Northern Territory|Tasmania|Australian Capital Territory";
-$cdnterrprov = "Ontario|Quebec|Nova Scotia|New Brunswick|Manitoba|British Columbia|Prince Edward Island|Saskatchewan|Alberta|Newfoundland and Labrador|Northwest Territories|Yukon|Nunavut";
-$country = "Democratic Republic of the Congo";
+us_states = [
+    "Alabama", "Alaska", "Arizona", "Arkansas", "California", "Colorado", "Connecticut",
+    "Delaware", "Florida", "Georgia", "Hawaii", "Idaho", "Illinois", "Indiana", "Iowa",
+    "Kansas", "Kentucky", "Louisiana", "Maine", "Maryland", "Massachusetts", "Michigan",
+    "Minnesota", "Mississippi", "Missouri", "Montana", "Nebraska", "Nevada", "New Hampshire",
+    "New Jersey", "New Mexico", "New York", "North Carolina", "North Dakota", "Ohio",
+    "Oklahoma", "Oregon", "Pennsylvania", "Rhode Island", "South Carolina", "South Dakota",
+    "Tennessee", "Texas", "Utah", "Vermont", "Virginia", "Washington", "West Virginia",
+    "Wisconsin", "Wyoming"
+]
 
+au_territories = [
+    "New South Wales", "Victoria", "South Australia", "Queensland", "Western Australia",
+    "Northern Territory", "Tasmania", "Australian Capital Territory"
+]
 
-#getting language ID
-$lang = $ARGV[0] || "en";
-my $langid = -1;
+cdn_terrprov = [
+    "Ontario", "Quebec", "Nova Scotia", "New Brunswick", "Manitoba", "British Columbia",
+    "Prince Edward Island", "Saskatchewan", "Alberta", "Newfoundland and Labrador",
+    "Northwest Territories", "Yukon", "Nunavut"
+]
 
-# Append new languages in the back!!!!
-@all_lang = split(/,/,"ar,bg,ca,ceb,commons,cs,da,de,el,en,eo,es,et,eu,fa,fi,fr,gl,he,hi,hr,ht,hu,id,it,ja,ko,lt,ms,new,nl,nn,no,pl,pt,ro,ru,simple,sk,sl,sr,sv,sw,te,th,tr,uk,vi,vo,war,zh,af,als,be,bpy,fy,ga,hy,ka,ku,la,lb,lv,mk,ml,nds,nv,os,pam,pms,ta,vec,kk,ilo,ast,uz,oc,sh,tl,sco,kn,az,bh,bn");
+country = "Democratic Republic of the Congo";
 
-for( $i = 0; $i<@all_lang; $i++ ) {
-  $langid = $i if( lc($lang) eq lc($all_lang[$i]) );
-}
-print "langid=$langid\n";
-die "unsupported language" if( $langid < 0 );
-
-my $database = $lang . "wiki_p";
-my $host = $lang . "wiki.labsdb";
-
-my $db = DBI->connect(
-  "DBI:mysql:database=$database;host=$host;mysql_use_result=0;mysql_read_default_file=" . getpwuid($<)->dir . "/replica.my.cnf",
-  undef, undef) or die "Error: $DBI::err, $DBI::errstr";
-
-print "Connected.\n";
-
-my $wmadatabase = "p50380g50921__wma_p";
-my $gheldatabase = "p50380g50921__ghel_p";
+# read languages and obtain ID
+with open("languages.dat", "r") as f:
+  all_lang = [l.rstrip('\n') for l in f.readlines()]
+langid = all_lang.index(lang)
 
 #create temporary blacklist table in $wmadatabase
-if( $langid != 4 ) {
-  $query = "CREATE TEMPORARY TABLE $wmadatabase.blacklist (gc_from INT, cpp INT, cdn INT, dnf FLOAT);";
-  $sth = $db->prepare( $query );
-  $rows = $sth->execute;
-  $query = "INSERT /* SLOW_OK */ INTO $wmadatabase.blacklist SELECT gc_from, count(*) AS cpp, COUNT(DISTINCT gc_name) AS cdn, COUNT(DISTINCT gc_name)/count(*) AS dnf FROM $gheldatabase.coord_${lang}wiki c GROUP BY gc_from HAVING dnf<0.9 AND cpp>4;";
-  $sth = $db->prepare( $query ) or die;
-  $rows = $sth->execute or die;
-  print "Found $rows blacklisted articles.\n";
-  $query = "CREATE INDEX /* SLOW_OK */ from_index ON $wmadatabase.blacklist (gc_from);";
-  $sth = $db->prepare( $query ) or die;
-  $rows = $sth->execute or die;
-  print "Index created.\n";
-}
+# we'll prepare the blacklists separately and pickle them
 
-$rev = $ARGV[1]+0;
-$maxzoom = 14;
+# if( $langid != 4 ) {
+#   $query = "CREATE TEMPORARY TABLE $wmadatabase.blacklist (gc_from INT, cpp INT, cdn INT, dnf FLOAT);";
+#   $sth = $db->prepare( $query );
+#   $rows = $sth->execute;
+#   $query = "INSERT /* SLOW_OK */ INTO $wmadatabase.blacklist SELECT gc_from, count(*) AS cpp, COUNT(DISTINCT gc_name) AS cdn, COUNT(DISTINCT gc_name)/count(*) AS dnf FROM $gheldatabase.coord_${lang}wiki c GROUP BY gc_from HAVING dnf<0.9 AND cpp>4;";
+#   $sth = $db->prepare( $query ) or die;
+#   $rows = $sth->execute or die;
+#   print "Found $rows blacklisted articles.\n";
+#   $query = "CREATE INDEX /* SLOW_OK */ from_index ON $wmadatabase.blacklist (gc_from);";
+#   $sth = $db->prepare( $query ) or die;
+#   $rows = $sth->execute or die;
+#   print "Index created.\n";
+# }
 
-undef @insert;
+rev = int(sys.argv[2]);
+maxzoom = 14;
 
 #    $query = "create temporary table $wmadatabase.compics ( page_id int, page_title varchar(255), el_to blob, img_width int, img_height int )";
 #    110     $sth = $db->prepare( $query );
@@ -153,7 +151,7 @@ undef @insert;
 
 
 $start = time();
-$fac = ((1<<$maxzoom)*3)/180.0;
+fac = ((1<<maxzoom)*3)/180.0;
 if( $langid == 4 ) {
   $query = "CREATE TEMPORARY TABLE $wmadatabase.compics ( pid INT, lat DOUBLE(11,8), lon DOUBLE(11,8), title VARCHAR(255), head FLOAT, globe ENUM('','Mercury','Ariel','Phobos','Deimos','Mars','Rhea','Oberon','Europa','Tethys','Pluto','Miranda','Titania','Phoebe','Enceladus','Venus','Moon','Hyperion','Triton','Ceres','Dione','Titan','Ganymede','Umbriel','Callisto','Jupiter','Io','Earth','Mimas','Iapetus') )";
   $sth = $db->prepare( $query );
@@ -203,12 +201,10 @@ $query = <<QEND
     CASE WHEN gc_primary=1 THEN page_title ELSE gc_name END, t.id, gc_primary,
     CASE gc_globe WHEN '' THEN 'Earth' ELSE gc_globe END
   FROM page, $gheldatabase.coord_${lang}wiki c
-    LEFT JOIN $wmadatabase.blacklist b ON b.gc_from=c.gc_from
     LEFt JOIN $wmadatabase.wma_tile t ON t.z=$maxzoom
       AND t.x=FLOOR( (gc_lon-FLOOR(gc_lon/360)*360) * $fac ) AND t.y=FLOOR( (gc_lat+90.0) * $fac )
     WHERE page_namespace=0 AND c.gc_from=page_id
       AND gc_lat<=90.0 AND gc_lat>=-90.0
-      AND b.gc_from IS NULL;
 QEND
 ;
 }
@@ -265,43 +261,43 @@ while( @row = $sth->fetchrow() )
     $pop = int($pop);
     $name =~ s/_/ /g;
 
-    switch(lc($type))
+    switch(lc(type))
     {
-      case "mountain"  { $style = 2; }
-      case "country"   { $style = 3; }
+      case "mountain"  { style = 2; }
+      case "country"   { style = 3; }
       case "city"      {
-        if($pop<1000000)  { $style = 8; }
-        if($pop<500000)   { $style = 7; }
-        if($pop<100000)   { $style = 6; }
-        if($pop<10000)    { $style = 5; }
-        if($pop>=1000000) { $style = 9; }
+        if(pop<1000000)  { style = 8; }
+        if(pop<500000)   { style = 7; }
+        if(pop<100000)   { style = 6; }
+        if(pop<10000)    { style = 5; }
+        if(pop>=1000000) { style = 9; }
       }
-      case "event"      { $style = 10; }
-      else { $style = 0; }
+      case "event"      { style = 10; }
+      else { style = 0 }
     }
 
     # take care of a few special cases
-    if    ( $name =~ /^(.*) Township, .* County, ($usstates)$/ )         { $name = "$1 Twp."; }
-    elsif ( $name =~ /^(.*) Township, ($usstates)$/ )                    { $name = "$1 Twp."; }
-    elsif ( $name =~ /^(.*), ($usstates|$auterritories|$cdnterrprov|$country)$/ ) { $name = "$1"; }
-    elsif ( $name =~ /^(.*) \(($usstates)\)$/ )                          { $name = "$1"; }
-    elsif ( $name =~ /^(.*) \(i.* County, ($usstates)\)$/ )              { $name = "$1"; }
+    if    ( $name =~ /^(.*) Township, .* County, (us_states)$/ )         { $name = "$1 Twp."; }
+    elif ( $name =~ /^(.*) Township, (us_states)$/ )                    { $name = "$1 Twp."; }
+    elif ( $name =~ /^(.*), (us_states|$auterritories|$cdnterrprov|$country)$/ ) { $name = "$1"; }
+    elif ( $name =~ /^(.*) \((us_states)\)$/ )                          { $name = "$1"; }
+    elif ( $name =~ /^(.*) \(i.* County, (us_states)\)$/ )              { $name = "$1"; }
 
     # calculate final weight
     $weight = ( int($weight) + $pop/20 - length($name)**2 ) * $primary;
   }
 
   # calculate tile coordinates at maxzoom
-  $y = int( ( 90.0 + $lat ) / 180.0 * ((1<<$maxzoom)*3) );
-  $lon += 360.0 if( $lon < 0 );
-  next if( ( $lon < 0.0 ) || ( $lon > 360.0 ) );
-  $x = int( $lon / 360.0 * ((1<<$maxzoom)*3) * 2 );
+  y = int( ( 90.0 + $lat ) / 180.0 * ((1<<$maxzoom)*3) );
+  lon += 360.0 if( lon < 0 );
+  next if( ( lon < 0.0 ) || ( lon > 360.0 ) );
+  x = int( lon / 360.0 * ((1<<maxzoom)*3) * 2 );
 
   # did we already insert a tile?
-  if( $tileid == 0 ) {
-    $xh=int($x/2);
-    $yh=int($y/2);
-    $query = "INSERT INTO wma_tile (x,y,z,xh,yh) VALUES ('$x','$y','$maxzoom','$xh','$yh');";
+  if( tileid == 0 ) {
+    xh=int(x/2);
+    yh=int(y/2);
+    query = "INSERT INTO wma_tile (x,y,z,xh,yh) VALUES ('$x','$y','$maxzoom','$xh','$yh');";
 
     # make sure the connection is there
     #$db2 ||= DBI->connect(
