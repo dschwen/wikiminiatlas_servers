@@ -15,6 +15,8 @@ us4_re = re.compile('^(.*) \(.*County, (' + us_states + ')\)$')
 all_prov_re = re.compile("^(.*), (" + us_states + '|' + au_territories + '|' + cdn_terrprov + ')$')
 
 globe_re = re.compile('^(Mercury|Ariel|Phobos|Deimos|Mars|Rhea|Oberon|Europa|Tethys|Pluto|Miranda|Titania|Phoebe|Enceladus|Venus|Moon|Hyperion|Triton|Ceres|Dione|Titan|Ganymede|Umbriel|Callisto|Jupiter|Io|Earth|Mimas|Iapetus)$')
+city_re = re.compile('^city\((.*)\)$')
+
 #
 # take care of a few special cases to enable shorter names
 #
@@ -41,6 +43,10 @@ def shortenName(name):
 
     return name
 
+list_n = ['n', 'N']
+list_e = ['e', 'E', 'o', 'O']
+list_s = ['s', 'S']
+list_w = ['w', 'W']
 
 #
 # parse link and default page name
@@ -49,75 +55,72 @@ def parse(link, name, weight):
     qs = urllib_parse.parse_qs(link)
 
     if not 'params' in qs:
-        raise ValueError("No 'params' parameter found")
+        raise ValueError("No 'params' parameter found", qs)
 
     # parse params
     params = qs['params'][0].split('_')
-
-    if params[1] == 'N':
+    if params[1] in list_n:
         lat = float(params[0])
         offset = 2
 
-    elif params[1] == 'S':
+    elif params[1] in list_s:
         lat = -float(params[0])
         offset = 2
 
-    elif params[2] == 'N':
-        lat = float(params[0]) + float(params[1]) / 60.0
+    elif params[2] in list_n:
+        lat = float(params[0]) + float(params[1] or '0') / 60.0
         offset = 3
 
-    elif params[2] == 'S':
-        lat = -float(params[0]) - float(params[1]) / 60.0
+    elif params[2] in list_s:
+        lat = -float(params[0]) - float(params[1] or '0') / 60.0
         offset = 3
 
-    elif params[3] == 'N':
-        lat = float(params[0]) + float(params[1]) / 60.0
+    elif params[3] in list_n:
+        lat = float(params[0]) + float(params[1] or '0') / 60.0 + float(params[2] or '0') / 3600.0
         offset = 4
 
-    elif params[3] == 'S':
-        lat = -float(params[0]) - float(params[1]) / 60.0
+    elif params[3] in list_s:
+        lat = -float(params[0]) - float(params[1] or '0') / 60.0 - float(params[2] or '0') / 3600.0
         offset = 4
 
     else:
-        raise ValueError("NS parse error")
+        raise ValueError("NS parse error", params)
 
-
-    if params[offset + 1] == 'E':
+    if params[offset + 1] in list_e:
         lon = float(params[offset + 0])
         offset += 2
 
-    elif params[offset + 1] == 'W':
+    elif params[offset + 1] in list_w:
         lon = -float(params[offset + 0])
         offset += 2
 
-    elif params[offset + 2] == 'E':
-        lon = float(params[offset + 0]) + float(params[offset + 1]) / 60.0
+    elif params[offset + 2] in list_e:
+        lon = float(params[offset + 0]) + float(params[offset + 1] or '0') / 60.0
         offset += 3
 
-    elif params[offset + 2] == 'W':
-        lon = -float(params[offset + 0]) - float(params[offset + 1]) / 60.0
+    elif params[offset + 2] in list_w:
+        lon = -float(params[offset + 0]) - float(params[offset + 1] or '0') / 60.0
         offset += 3
 
-    elif params[offset + 3] == 'E':
-        lon = float(params[offset + 0]) + float(params[offset + 1]) / 60.0
+    elif params[offset + 3] in list_e:
+        lon = float(params[offset + 0]) + float(params[offset + 1] or '0') / 60.0 + float(params[offset + 2] or '0') / 3600.0
         offset += 4
 
-    elif params[offset + 3] == 'W':
-        lon = -float(params[offset + 0]) - float(params[offset + 1]) / 60.0
+    elif params[offset + 3] in list_w:
+        lon = -float(params[offset + 0]) - float(params[offset + 1] or '0') / 60.0 - float(params[offset + 2] or '0') / 3600.0
         offset += 4
 
     else:
-        raise ValueError("EW parse error")
+        raise ValueError("EW parse error", params)
 
-    aux = {i[0]: i[1] for i in [p.split(':') for p in params[offset:]]}
-
-    # population number
-    if 'pop' in aux:
-        pop = int(aux['pop'])
-    else:
-        pop = 0
+    try:
+        aux = {i[0]: i[1] for i in [p.split(':') for p in params[offset:]]}
+    except:
+        aux = {}
 
     # determine style index
+    style = 0
+    pop = 0
     if 'type' in aux:
         type = aux['type']
 
@@ -127,40 +130,47 @@ def parse(link, name, weight):
         elif type == 'country':
             style = 3
 
-        elif type == 'city':
-            if pop < 1000000:
-                style = 8
-            if pop < 500000:
-                style = 7
-            if pop < 100000:
-                style = 6
-            if pop < 10000:
-                style = 5
-            if pop >= 1000000:
-                style = 9
-
         elif type == 'event':
              style = 10
 
         else:
-             style = 0
+            match = city_re.match(type)
+            if match:
+                pop = int(match.group(1).replace(',','').replace('.',''))
+
+                if pop < 1000000:
+                    style = 8
+                if pop < 500000:
+                    style = 7
+                if pop < 100000:
+                    style = 6
+                if pop < 10000:
+                    style = 5
+                if pop >= 1000000:
+                    style = 9
 
     if 'globe' in aux and globe_re.match(aux['globe']):
         globe = aux['globe']
     else:
         globe = ''
 
+    # deal with scale
+    scale = 0
+    if 'scale' in aux:
+        scale = int(aux['scale'])
+
     # process page name
     name = shortenName(name)
 
     # calculate final weight
-    weight = (weight + pop/20 - len(name)**2)
+    weight = (weight + pop/20 + scale - len(name)**2)
 
     return {
         'lat': lat,
         'lon': lon,
         'style': style,
         'weight': weight,
+        'scale': scale,
         'title': name,
         'globe': globe
     }

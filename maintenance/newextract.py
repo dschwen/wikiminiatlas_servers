@@ -41,6 +41,7 @@ ccr = cdb.cursor()
 
 n_tot = 0
 n_ins = 0
+n_skip = 0
 n_fail = 0
 
 #
@@ -62,6 +63,7 @@ print("Largest page_id is %d." % global_max_page)
 step_page = 20000
 min_page = 0
 max_page = min_page + step_page
+last_geo = None
 
 while min_page <= global_max_page:
     query = "SELECT page_id, page_title, page_len, SUBSTRING(el_to, POSITION('geohack.php' IN el_to) + 12) AS params "\
@@ -85,25 +87,31 @@ while min_page <= global_max_page:
         # process coordinates
         try:
             geo = geolink.parse(row[3].decode('utf-8'), row[1].decode('utf-8').replace('_', ' '), row[2])
-            with tdb.cursor() as tcr:
-                geo['page_id'] = page_id
-                query = 'INSERT INTO coord_' + lang + ' (page_id, lat, lon, style, weight, title, globe) VALUES (%{page_id}, %{lat}, %{lon}, %{style}, %{weight}, %{title}, %{globe})'
-                tcr.execute(query, geo)
-                tdb.commit()
+
+            # check if we just inserted this coordinate
+            if geo == last_geo:
+                n_skip += 1
+            else:
+                last_geo =  geo.copy()
+
+                with tdb.cursor() as tcr:
+                    geo['page_id'] = page_id
+                    query = 'INSERT INTO coord_' + lang + ' (page_id, lat, lon, style, weight, scale, title, globe) VALUES (%(page_id)s, %(lat)s, %(lon)s, %(style)s, %(weight)s, %(scale)s, %(title)s, %(globe)s)'
+                    tcr.execute(query, geo)
+                    tdb.commit()
         except:
-            print("Parse fail: ", row[3])
+            print("Fail on page '%s': %s" % (row[1].decode('utf-8'), row[3].decode('utf-8')))
             n_fail += 1
-            pass
 
         n_tot += 1
 
         if n_tot % 1000 == 0:
-            print("%d rows processed, %d pages inserted, %d unparsable" % (n_tot, n_ins, n_fail))
+            print("%d rows processed, %d pages inserted, %d coords skipped, %d coords unparsable" % (n_tot, n_ins, n_skip, n_fail))
 
     min_page += step_page
     max_page += step_page
 
-print("Done. %d rows processed, %d pages inserted, %d unparsable" % (n_tot, n_ins, n_fail))
+print("%d rows processed, %d pages inserted, %d coords skipped, %d coords unparsable" % (n_tot, n_ins, n_skip, n_fail))
 
 #
 # pickle page id cache
