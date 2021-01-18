@@ -45,8 +45,8 @@ list_e = ['e', 'E', 'o', 'O']
 list_s = ['s', 'S']
 list_w = ['w', 'W']
 
-list_globe = ['Mercury', 'Ariel', 'Phobos', 'Deimos', 'Mars', 'Rhea', 'Oberon', 'Europa', 'Tethys', 'Pluto', 'Miranda', 'Titania', 'Phoebe', 'Enceladus', 'Venus', 'Moon', 'Hyperion', 'Triton', 'Ceres', 'Dione', 'Titan', 'Ganymede', 'Umbriel', 'Callisto', 'Jupiter', 'Io', 'Earth', 'Mimas', 'Iapetus']
-list_globe_lower = [i.lower() for i in globe]
+list_globe = ['', 'Mercury', 'Ariel', 'Phobos', 'Deimos', 'Mars', 'Rhea', 'Oberon', 'Europa', 'Tethys', 'Pluto', 'Miranda', 'Titania', 'Phoebe', 'Enceladus', 'Venus', 'Moon', 'Hyperion', 'Triton', 'Ceres', 'Dione', 'Titan', 'Ganymede', 'Umbriel', 'Callisto', 'Jupiter', 'Io', 'Earth', 'Mimas', 'Iapetus', 'Charon', 'Vesta']
+list_globe_lower = [i.lower() for i in list_globe]
 
 city_re = re.compile('^city\((.*)\)$')
 semicolon_re = re.compile('^([+-]?([0-9]+([.][0-9]*)?|[.][0-9]+));([+-]?([0-9]+([.][0-9]*)?|[.][0-9]+))$')
@@ -164,11 +164,10 @@ def parse(link, name, weight):
                     style = 9
 
     # planetary body
-    if 'globe' in aux:
-        # normalize globe capitalization (throws for invalid globes)
+    globe = 'Earth'
+    if 'globe' in aux and aux['globe']:
+        # normalize globe capitalization (throws for invalid globes - which should not be displayed on earth)
         globe = list_globe[list_globe_lower.index(aux['globe'].lower())]
-    else:
-        globe = ''
 
     # deal with scale
     scale = 0
@@ -181,9 +180,9 @@ def parse(link, name, weight):
             scale = int(aux['dim'])
         except:
             if aux['dim'][-2:] == 'km':
-                scale = int(aux['dim'][:-2]) * 1000
+                scale = int(float(aux['dim'][:-2]) * 1000)
             if aux['dim'][-2:] == 'mi':
-                scale = int(aux['dim'][:-2]) * 1609
+                scale = int(float(aux['dim'][:-2]) * 1609.3)
 
     # process page name
     name = shortenName(name)

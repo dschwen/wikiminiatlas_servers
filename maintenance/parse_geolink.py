@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
 import geolink
+import sys
 
-print(geolink.parse("params=43.96;-78.3_dim:2000", "Tangle Woold Island (Alabama)", 1))
+print(geolink.parse(sys.argv[1], "Tangle Woold Island (Alabama)", 1))
