@@ -186,8 +186,12 @@ def parse(link, name, weight):
             if aux['dim'][-2:] == 'mi':
                 scale = int(float(aux['dim'][:-2]) * 1609.3)
 
-    # process page name
-    name = shortenName(name)
+    # process page name or title
+    if 'title' in aux and aux['title']:
+        name = aux['title']
+        weight = 0
+    else:
+        name = shortenName(name)
 
     # calculate final weight
     weight = (weight + pop/20 + scale - len(name)**2)
