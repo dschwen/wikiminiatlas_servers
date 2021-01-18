@@ -14,9 +14,6 @@ us4_re = re.compile('^(.*) \(.*County, (' + us_states + ')\)$')
 
 all_prov_re = re.compile("^(.*), (" + us_states + '|' + au_territories + '|' + cdn_terrprov + ')$')
 
-globe_re = re.compile('^(Mercury|Ariel|Phobos|Deimos|Mars|Rhea|Oberon|Europa|Tethys|Pluto|Miranda|Titania|Phoebe|Enceladus|Venus|Moon|Hyperion|Triton|Ceres|Dione|Titan|Ganymede|Umbriel|Callisto|Jupiter|Io|Earth|Mimas|Iapetus)$')
-city_re = re.compile('^city\((.*)\)$')
-
 #
 # take care of a few special cases to enable shorter names
 #
@@ -48,70 +45,82 @@ list_e = ['e', 'E', 'o', 'O']
 list_s = ['s', 'S']
 list_w = ['w', 'W']
 
+globe_re = re.compile('^(Mercury|Ariel|Phobos|Deimos|Mars|Rhea|Oberon|Europa|Tethys|Pluto|Miranda|Titania|Phoebe|Enceladus|Venus|Moon|Hyperion|Triton|Ceres|Dione|Titan|Ganymede|Umbriel|Callisto|Jupiter|Io|Earth|Mimas|Iapetus)$')
+city_re = re.compile('^city\((.*)\)$')
+semicolon_re = re.compile('^([+-]?([0-9]+([.][0-9]*)?|[.][0-9]+));([+-]?([0-9]+([.][0-9]*)?|[.][0-9]+))$')
+
 #
 # parse link and default page name
 #
 def parse(link, name, weight):
-    qs = urllib_parse.parse_qs(link)
-
+    qs = urllib_parse.parse_qs(link.replace(';','%3B'))
+    print(qs)
     if not 'params' in qs:
         raise ValueError("No 'params' parameter found", qs)
 
     # parse params
     params = qs['params'][0].split('_')
-    if params[1] in list_n:
-        lat = float(params[0])
-        offset = 2
 
-    elif params[1] in list_s:
-        lat = -float(params[0])
-        offset = 2
-
-    elif params[2] in list_n:
-        lat = float(params[0]) + float(params[1] or '0') / 60.0
-        offset = 3
-
-    elif params[2] in list_s:
-        lat = -float(params[0]) - float(params[1] or '0') / 60.0
-        offset = 3
-
-    elif params[3] in list_n:
-        lat = float(params[0]) + float(params[1] or '0') / 60.0 + float(params[2] or '0') / 3600.0
-        offset = 4
-
-    elif params[3] in list_s:
-        lat = -float(params[0]) - float(params[1] or '0') / 60.0 - float(params[2] or '0') / 3600.0
-        offset = 4
-
+    # starting with coords...
+    match = semicolon_re.match(params[0])
+    if match:
+        # matches the uncommon lat;lon syntax
+        lat = match.group(1)
+        lon = match.group(4)
     else:
-        raise ValueError("NS parse error", params)
+        if params[1] in list_n:
+            lat = float(params[0])
+            offset = 2
 
-    if params[offset + 1] in list_e:
-        lon = float(params[offset + 0])
-        offset += 2
+        elif params[1] in list_s:
+            lat = -float(params[0])
+            offset = 2
 
-    elif params[offset + 1] in list_w:
-        lon = -float(params[offset + 0])
-        offset += 2
+        elif params[2] in list_n:
+            lat = float(params[0]) + float(params[1] or '0') / 60.0
+            offset = 3
 
-    elif params[offset + 2] in list_e:
-        lon = float(params[offset + 0]) + float(params[offset + 1] or '0') / 60.0
-        offset += 3
+        elif params[2] in list_s:
+            lat = -float(params[0]) - float(params[1] or '0') / 60.0
+            offset = 3
 
-    elif params[offset + 2] in list_w:
-        lon = -float(params[offset + 0]) - float(params[offset + 1] or '0') / 60.0
-        offset += 3
+        elif params[3] in list_n:
+            lat = float(params[0]) + float(params[1] or '0') / 60.0 + float(params[2] or '0') / 3600.0
+            offset = 4
 
-    elif params[offset + 3] in list_e:
-        lon = float(params[offset + 0]) + float(params[offset + 1] or '0') / 60.0 + float(params[offset + 2] or '0') / 3600.0
-        offset += 4
+        elif params[3] in list_s:
+            lat = -float(params[0]) - float(params[1] or '0') / 60.0 - float(params[2] or '0') / 3600.0
+            offset = 4
 
-    elif params[offset + 3] in list_w:
-        lon = -float(params[offset + 0]) - float(params[offset + 1] or '0') / 60.0 - float(params[offset + 2] or '0') / 3600.0
-        offset += 4
+        else:
+            raise ValueError("NS parse error", params)
 
-    else:
-        raise ValueError("EW parse error", params)
+        if params[offset + 1] in list_e:
+            lon = float(params[offset + 0])
+            offset += 2
+
+        elif params[offset + 1] in list_w:
+            lon = -float(params[offset + 0])
+            offset += 2
+
+        elif params[offset + 2] in list_e:
+            lon = float(params[offset + 0]) + float(params[offset + 1] or '0') / 60.0
+            offset += 3
+
+        elif params[offset + 2] in list_w:
+            lon = -float(params[offset + 0]) - float(params[offset + 1] or '0') / 60.0
+            offset += 3
+
+        elif params[offset + 3] in list_e:
+            lon = float(params[offset + 0]) + float(params[offset + 1] or '0') / 60.0 + float(params[offset + 2] or '0') / 3600.0
+            offset += 4
+
+        elif params[offset + 3] in list_w:
+            lon = -float(params[offset + 0]) - float(params[offset + 1] or '0') / 60.0 - float(params[offset + 2] or '0') / 3600.0
+            offset += 4
+
+        else:
+            raise ValueError("EW parse error", params)
 
     try:
         aux = {i[0]: i[1] for i in [p.split(':') for p in params[offset:]]}
@@ -158,6 +167,10 @@ def parse(link, name, weight):
     scale = 0
     if 'scale' in aux:
         scale = int(aux['scale'])
+
+    # deal with dim (do something fancier in the future)
+    if 'dim' in aux:
+        scale = int(aux['dim'])
 
     # process page name
     name = shortenName(name)
