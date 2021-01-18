@@ -1,6 +1,7 @@
 # geolink parsing module
 
 import re
+import os
 from urllib import parse as urllib_parse
 
 us_states = "Alabama|Alaska|Arizona|Arkansas|California|Colorado|Connecticut|Delaware|Florida|Georgia|Hawaii|Idaho|Illinois|Indiana|Iowa|Kansas|Kentucky|Louisiana|Maine|Maryland|Massachusetts|Michigan|Minnesota|Mississippi|Missouri|Montana|Nebraska|Nevada|New Hampshire|New Jersey|New Mexico|New York|North Carolina|North Dakota|Ohio|Oklahoma|Oregon|Pennsylvania|Rhode Island|South Carolina|South Dakota|Tennessee|Texas|Utah|Vermont|Virginia|Washington|West Virginia|Wisconsin|Wyoming"
@@ -45,8 +46,9 @@ list_e = ['e', 'E', 'o', 'O']
 list_s = ['s', 'S']
 list_w = ['w', 'W']
 
-list_globe = ['', 'Mercury', 'Ariel', 'Phobos', 'Deimos', 'Mars', 'Rhea', 'Oberon', 'Europa', 'Tethys', 'Pluto', 'Miranda', 'Titania', 'Phoebe', 'Enceladus', 'Venus', 'Moon', 'Hyperion', 'Triton', 'Ceres', 'Dione', 'Titan', 'Ganymede', 'Umbriel', 'Callisto', 'Jupiter', 'Io', 'Earth', 'Mimas', 'Iapetus', 'Charon', 'Vesta']
-list_globe_lower = [i.lower() for i in list_globe]
+# load globes list
+with open(os.path.join(os.path.dirname(__file__), 'globes.dat')) as globes_file:
+    list_globe = [i.rstrip('\n').lower() for i in globes_file.readlines()]
 
 city_re = re.compile('^city\((.*)\)$')
 semicolon_re = re.compile('^([+-]?([0-9]+([.][0-9]*)?|[.][0-9]+));([+-]?([0-9]+([.][0-9]*)?|[.][0-9]+))$')
@@ -163,11 +165,11 @@ def parse(link, name, weight):
                 if pop >= 1000000:
                     style = 9
 
-    # planetary body
-    globe = 'Earth'
+    # planetary body (default to 0 = earth)
+    globe = 0
     if 'globe' in aux and aux['globe']:
         # normalize globe capitalization (throws for invalid globes - which should not be displayed on earth)
-        globe = list_globe[list_globe_lower.index(aux['globe'].lower())]
+        globe = list_globe.index(aux['globe'].lower())
 
     # deal with scale
     scale = 0
