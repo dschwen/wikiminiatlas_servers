@@ -78,8 +78,12 @@ while min_page <= global_max_page:
         if not page_id in pages:
             with tdb.cursor() as tcr:
                 query = 'INSERT INTO page_' + lang + ' (page_id, page_title, page_len) VALUES (%s, %s, %s)'
-                tcr.execute(query, (page_id, row[1], row[2]))
-                tdb.commit()
+                try:
+                    tcr.execute(query, (page_id, row[1], row[2]))
+                    tdb.commit()
+                except:
+                    # ignore the duplicate primary key integrity error here
+                    pass
 
             pages.add(page_id)
             n_ins += 1

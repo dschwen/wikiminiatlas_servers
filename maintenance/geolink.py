@@ -45,7 +45,7 @@ list_e = ['e', 'E', 'o', 'O']
 list_s = ['s', 'S']
 list_w = ['w', 'W']
 
-globe_re = re.compile('^(Mercury|Ariel|Phobos|Deimos|Mars|Rhea|Oberon|Europa|Tethys|Pluto|Miranda|Titania|Phoebe|Enceladus|Venus|Moon|Hyperion|Triton|Ceres|Dione|Titan|Ganymede|Umbriel|Callisto|Jupiter|Io|Earth|Mimas|Iapetus)$')
+globe = ['Mercury|Ariel|Phobos|Deimos|Mars|Rhea|Oberon|Europa|Tethys|Pluto|Miranda|Titania|Phoebe|Enceladus|Venus|Moon|Hyperion|Triton|Ceres|Dione|Titan|Ganymede|Umbriel|Callisto|Jupiter|Io|Earth|Mimas|Iapetus)$')
 city_re = re.compile('^city\((.*)\)$')
 semicolon_re = re.compile('^([+-]?([0-9]+([.][0-9]*)?|[.][0-9]+));([+-]?([0-9]+([.][0-9]*)?|[.][0-9]+))$')
 
@@ -54,7 +54,6 @@ semicolon_re = re.compile('^([+-]?([0-9]+([.][0-9]*)?|[.][0-9]+));([+-]?([0-9]+(
 #
 def parse(link, name, weight):
     qs = urllib_parse.parse_qs(link.replace(';','%3B'))
-    print(qs)
     if not 'params' in qs:
         raise ValueError("No 'params' parameter found", qs)
 
@@ -170,7 +169,13 @@ def parse(link, name, weight):
 
     # deal with dim (do something fancier in the future)
     if 'dim' in aux:
-        scale = int(aux['dim'])
+        try:
+            scale = int(aux['dim'])
+        except:
+            if aux['dim'][-2:] == 'km':
+                scale = int(aux['dim'][:-2]) * 1000
+            if aux['dim'][-2:] == 'mi':
+                scale = int(aux['dim'][:-2]) * 1609
 
     # process page name
     name = shortenName(name)
