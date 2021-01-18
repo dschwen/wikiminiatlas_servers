@@ -45,7 +45,9 @@ list_e = ['e', 'E', 'o', 'O']
 list_s = ['s', 'S']
 list_w = ['w', 'W']
 
-globe = ['Mercury|Ariel|Phobos|Deimos|Mars|Rhea|Oberon|Europa|Tethys|Pluto|Miranda|Titania|Phoebe|Enceladus|Venus|Moon|Hyperion|Triton|Ceres|Dione|Titan|Ganymede|Umbriel|Callisto|Jupiter|Io|Earth|Mimas|Iapetus)$')
+list_globe = ['Mercury', 'Ariel', 'Phobos', 'Deimos', 'Mars', 'Rhea', 'Oberon', 'Europa', 'Tethys', 'Pluto', 'Miranda', 'Titania', 'Phoebe', 'Enceladus', 'Venus', 'Moon', 'Hyperion', 'Triton', 'Ceres', 'Dione', 'Titan', 'Ganymede', 'Umbriel', 'Callisto', 'Jupiter', 'Io', 'Earth', 'Mimas', 'Iapetus']
+list_globe_lower = [i.lower() for i in globe]
+
 city_re = re.compile('^city\((.*)\)$')
 semicolon_re = re.compile('^([+-]?([0-9]+([.][0-9]*)?|[.][0-9]+));([+-]?([0-9]+([.][0-9]*)?|[.][0-9]+))$')
 
@@ -144,7 +146,11 @@ def parse(link, name, weight):
         else:
             match = city_re.match(type)
             if match:
-                pop = int(match.group(1).replace(',','').replace('.',''))
+                try:
+                    pop = int(match.group(1).replace(',','').replace('.',''))
+                except:
+                    # invalid population entries (should get fixed, but we ignore them for now)
+                    pop = 0
 
                 if pop < 1000000:
                     style = 8
@@ -157,8 +163,10 @@ def parse(link, name, weight):
                 if pop >= 1000000:
                     style = 9
 
-    if 'globe' in aux and globe_re.match(aux['globe']):
-        globe = aux['globe']
+    # planetary body
+    if 'globe' in aux:
+        # normalize globe capitalization (throws for invalid globes)
+        globe = list_globe[list_globe_lower.index(aux['globe'].lower())]
     else:
         globe = ''
 
