@@ -47,7 +47,7 @@ n_fail = 0
 # clear out the temporary coordinates table
 #
 with tdb.cursor() as tcr:
-    tcr.execute("DELETE FROM coord_%" % lang)
+    tcr.execute("DELETE FROM coord_%s" % lang)
 
 #
 # get largest pageid
@@ -84,7 +84,7 @@ while min_page <= global_max_page:
 
         # process coordinates
         try:
-            geo = geolink.parse(row[3], row[1].replace('_', ' '), row[2])
+            geo = geolink.parse(row[3].decode('utf-8'), row[1].decode('utf-8').replace('_', ' '), row[2])
             with tdb.cursor() as tcr:
                 geo['page_id'] = page_id
                 query = 'INSERT INTO coord_' + lang + ' (page_id, lat, lon, style, weight, title, globe) VALUES (%{page_id}, %{lat}, %{lon}, %{style}, %{weight}, %{title}, %{globe})'

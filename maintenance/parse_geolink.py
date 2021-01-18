@@ -2,4 +2,4 @@
 
 import geolink
 
-print(geolink.parse('pagename=List_of_islands_of_Michigan&params=45.29833_N_83.48972_W_region:US-MI_type:isle&title=Tanglewood+Island', "Tangle Woold Island (Alabama)", 1))
+print(geolink.parse(b"pagename=Mount_Logan&params=60_35_03.5_N_140_27_20.5_W_type:mountain_region:CA&title=Houston's+Peak".decode('utf-8'), "Tangle Woold Island (Alabama)", 1))

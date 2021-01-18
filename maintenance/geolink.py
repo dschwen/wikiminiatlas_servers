@@ -49,7 +49,7 @@ def parse(link, name, weight):
     qs = urllib_parse.parse_qs(link)
 
     if not 'params' in qs:
-        raise "No 'params' parameter found"
+        raise ValueError("No 'params' parameter found")
 
     # parse params
     params = qs['params'][0].split('_')
@@ -79,7 +79,7 @@ def parse(link, name, weight):
         offset = 4
 
     else:
-        raise "NS parse error"
+        raise ValueError("NS parse error")
 
 
     if params[offset + 1] == 'E':
@@ -107,7 +107,7 @@ def parse(link, name, weight):
         offset += 4
 
     else:
-        raise "EW parse error"
+        raise ValueError("EW parse error")
 
     aux = {i[0]: i[1] for i in [p.split(':') for p in params[offset:]]}
 
@@ -147,7 +147,7 @@ def parse(link, name, weight):
 
     if 'globe' in aux and globe_re.match(aux['globe']):
         globe = aux['globe']
-    else
+    else:
         globe = ''
 
     # process page name
