@@ -14,6 +14,7 @@ us4_re = re.compile('^(.*) \(.*County, (' + us_states + ')\)$')
 
 all_prov_re = re.compile("^(.*), (" + us_states + '|' + au_territories + '|' + cdn_terrprov + ')$')
 
+globe_re = re.compile('^(Mercury|Ariel|Phobos|Deimos|Mars|Rhea|Oberon|Europa|Tethys|Pluto|Miranda|Titania|Phoebe|Enceladus|Venus|Moon|Hyperion|Triton|Ceres|Dione|Titan|Ganymede|Umbriel|Callisto|Jupiter|Io|Earth|Mimas|Iapetus)$')
 #
 # take care of a few special cases to enable shorter names
 #
@@ -144,6 +145,11 @@ def parse(link, name, weight):
         else:
              style = 0
 
+    if 'globe' in aux and globe_re.match(aux['globe']):
+        globe = aux['globe']
+    else
+        globe = ''
+
     # process page name
     name = shortenName(name)
 
@@ -155,5 +161,6 @@ def parse(link, name, weight):
         'lon': lon,
         'style': style,
         'weight': weight,
-        'title': name
+        'title': name,
+        'globe': globe
     }

@@ -82,10 +82,9 @@ while min_page <= global_max_page:
             pages.add(page_id)
             n_ins += 1
 
-page_id INT(8), lat FLOAT NOT NULL, lon FLOAT NOT NULL, pop INT(4) NOT NULL, style TINYINT, title VARBINARY(255), globe
         # process coordinates
         try:
-            geo = geolink.parse(row[3], row[1].replace('_', ' '), row[2]))
+            geo = geolink.parse(row[3], row[1].replace('_', ' '), row[2])
             with tdb.cursor() as tcr:
                 geo['page_id'] = page_id
                 query = 'INSERT INTO coord_' + lang + ' (page_id, lat, lon, style, weight, title, globe) VALUES (%{page_id}, %{lat}, %{lon}, %{style}, %{weight}, %{title}, %{globe})'
