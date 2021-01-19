@@ -29,7 +29,7 @@ CREATE TABLE `wma_connect` (
   `rev` int(11) DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `tile_id_index` (`tile_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=39435825 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -48,9 +48,9 @@ CREATE TABLE `wma_label` (
   `lat` double(11,8) DEFAULT NULL,
   `lon` double(11,8) DEFAULT NULL,
   `weight` int(11) DEFAULT NULL,
-  `globe` enum('','Mercury','Ariel','Phobos','Deimos','Mars','Rhea','Oberon','Europa','Tethys','Pluto','Miranda','Titania','Phoebe','Enceladus','Venus','Moon','Hyperion','Triton','Ceres','Dione','Titan','Ganymede','Umbriel','Callisto','Jupiter','Io','Earth','Mimas','Iapetus') DEFAULT NULL,
+  `globe` SMALLINT UNSIGNED NOT NULL ,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=10974483 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -71,7 +71,7 @@ CREATE TABLE `wma_tile` (
   KEY `z_index` (`z`),
   KEY `zxy_index` (`z`,`x`,`y`),
   KEY `zxhyh_index` (`z`,`xh`,`yh`)
-) ENGINE=InnoDB AUTO_INCREMENT=4068689 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 

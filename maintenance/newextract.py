@@ -116,7 +116,7 @@ while min_page <= global_max_page:
     min_page += step_page
     max_page += step_page
 
-print("%d rows processed, %d pages inserted, %d coords skipped, %d coords unparsable" % (n_tot, n_ins, n_skip, n_fail))
+print("Done. %d rows processed, %d pages inserted, %d coords skipped, %d coords unparsable" % (n_tot, n_ins, n_skip, n_fail))
 
 #
 # pickle page id cache
