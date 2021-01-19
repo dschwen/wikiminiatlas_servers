@@ -39,7 +39,7 @@ print("Found coord_id %d - %d." % (global_min_coord, global_max_coord))
 
 # iterate over zoom levels
 maxzoom = 14
-for zoom in range(maxzoom, -1, -1):
+for zoom in range(maxzoom - 1, -1, -1):
     print("Zoom level %d..." % zoom)
 
     zoompo = zoom + 1
@@ -55,9 +55,9 @@ for zoom in range(maxzoom, -1, -1):
         tdb.commit()
 
     query = "INSERT INTO wma_tile (x,y,z,xh,yh) "\
-            "SELECT DISTINCT  t.xh, t.yh, %(zoom)s, FLOOR(t.xh/2), FLOOR(t.yh/2) "
-            "FROM wma_tile t "
-            "LEFT JOIN wma_tile t2 ON t2.x=t.xh AND t2.y=t.yh AND t2.z=$(zoom)s "
+            "SELECT DISTINCT  t.xh, t.yh, %(zoom)s, FLOOR(t.xh/2), FLOOR(t.yh/2) "\
+            "FROM wma_tile t "\
+            "LEFT JOIN wma_tile t2 ON t2.x=t.xh AND t2.y=t.yh AND t2.z=%(zoom)s "\
             "WHERE t.z=%(zoompo)s AND t2.id IS NULL"
 
     with tdb.cursor() as tcr:
@@ -71,9 +71,9 @@ for zoom in range(maxzoom, -1, -1):
             "FROM ( "\
             "    SELECT c.tile_id AS tid, c.label_id, t2.id AS tileid, l.globe "\
             "    FROM wma_connect c, wma_label l, wma_tile t, wma_tile t2 "\
-            "    WHERE t.id = c.tile_id AND l.id = c.label_id AND t.z='%(zoompo)s AND c.rev=%(rev)s "\
-            "    AND l.lang_id=%(langid)s AND t2.z=%(zoom)s AND t2.x=t.xh AND t2.y=t.yh "\
-            "    ORDER BY t.id,l.globe,l.weight DESC"
+            "    WHERE t.id = c.tile_id AND l.id = c.label_id AND t.z=%(zoompo)s AND c.rev=%(rev)s "\
+            "    AND l.lang_id=%(lang_id)s AND t2.z=%(zoom)s AND t2.x=t.xh AND t2.y=t.yh "\
+            "    ORDER BY t.id,l.globe,l.weight DESC"\
             ") AS low_level_tiles "\
             "GROUP BY tid, globe"
 
