@@ -3,12 +3,13 @@
 import toolforge
 import pickle
 import sys
+import os
 
 #
 # get language to process
 #
 lang = sys.argv[1]
-rev = int(sys.argv[2]);
+rev = int(sys.argv[2])
 
 # load languages list
 with open(os.path.join(os.path.dirname(__file__), 'languages.dat')) as lang_file:
@@ -26,12 +27,12 @@ n_tot = 0
 n_tile = 0
 
 #
-# get largest pageid
+# get largest coord_id
 #
 with tdb.cursor() as tcr:
-    tcr.execute('SELECT MAX(el_from) FROM externallinks')
-    global_max_page = tcr.fetchone()[0];
-print("Largest page_id is %d." % global_max_page)
+    tcr.execute('SELECT MAX(coord_id) FROM coord_' + lang)
+    global_max_coord = tcr.fetchone()[0];
+print("Largest page_id is %d." % global_max_coord)
 
 #
 # build bad list
@@ -54,6 +55,7 @@ with tdb.cursor() as tcr:
             "WHERE c.label_id = l.id AND c.rev=%(rev)d AND l.lang_id=%(lang_id)d" % {'rev': rev, 'lang_id': lang_id}
     rows = tcr.execute(query)
     print("%d rows deleted" % rows)
+    tdb.commit()
 
 # map scale setting
 maxzoom = 14;
@@ -81,71 +83,113 @@ label_param = {
 }
 
 #
+# get tile list
+#
+print('Fetching tilelist...')
+tile_list = {}
+with tdb.cursor() as tcr:
+    tcr.execute('SELECT id, x, y FROM wma_tile WHERE z=%s', maxzoom)
+    for row in tcr:
+        tile_list[(row[1], row[2])] = row[0]
+print("%d tiles found." % len(tile_list.keys()))
+
+#
 # get coordinates
 #
-step_page = 20000
-min_page = 0
-max_page = min_page + step_page
+step_coord = 20000
+min_coord = 0
+max_coord = min_coord + step_coord
 
-while min_page <= global_max_page:
-    query = "SELECT page_id, lat, lon, style, weight, scale, title, globe, t.id "\
-            "FROM coord_%(lang)s "\
-            "LEFT JOIN wma_tile t "\
-            "ON t.z=%(maxzoom)d AND t.x=FLOOR((lon-FLOOR(lon/360)*360) * %(fac)d) AND t.y=FLOOR((lat+90.0) * %(fac)d) " \
-            "WHERE lat<=90.0 AND lat>=-90.0" % {'maxzoom': maxzoom, 'fac': fac, 'lang': lang}
+while min_coord <= global_max_coord:
+    query = "SELECT page_id, lat, lon, style, weight, scale, title, globe "\
+            "FROM coord_" + lang + " "\
+            "WHERE coord_id >= %(min_coord)s AND coord_id < %(max_coord)s AND lat<=90.0 AND lat>=-90.0"
 
     with tdb.cursor() as tcr:
-        for row in tcr:
-            page_id = row[0]
+        tcr.execute(query, {'min_coord': min_coord, 'max_coord': max_coord, 'maxzoom': maxzoom, 'fac': fac})
+        rows = tcr.fetchall()
 
-            # skip coordinates from bad pages
-            if page_id in bad_set:
-                continue
+    print("%d rows retireved." % len(rows))
 
-            tile_id = row[8]
+    label_batch = []
+    for row in rows:
+        page_id = row[0]
 
-            lat = row[1]
-            lon = row[2]
-            lon += 360.0 if lon < 0
-            if lon < 0.0 or lon > 360.0:
-                continue
+        # skip coordinates from bad pages
+        if page_id in bad_set:
+            continue
+
+        lat = row[1]
+        lon = row[2]
+        if lon < 0:
+            lon += 360.0 
+        if lon < 0.0 or lon > 360.0:
+            continue
+
+        y = int((90.0 + lat) / 180.0 * ((1 << maxzoom) * 3))
+        x = int( lon / 360.0 * ((1<<maxzoom)*3) * 2 );
+        
+        # tile does not exist yet
+        if not (x,y) in tile_list:
+            tile_param['x'] = x
+            tile_param['y'] = y
+            tile_param['xh'] = x // 2
+            tile_param['yh'] = y // 2
 
             with idb.cursor() as icr:
-                # tile does not exist yet
-                if not tile_id:
-                    y = int((90.0 + lat) / 180.0 * ((1 << maxzoom) * 3))
-                    x = int( lon / 360.0 * ((1<<maxzoom)*3) * 2 );
-                    tile_param['x'] = x
-                    tile_param['y'] = y
-                    tile_param['xh'] = x // 2
-                    tile_param['yh'] = y // 2
-
-                    query = "INSERT INTO wma_tile (x,y,z,xh,yh) VALUES ($(x)s,$(y)s,$(maxzoom)s,$(xh)s,$(yh)s)"
-                    icr.execute(query, tile_param)
-                    idb.commit()
-
-                    tile_id = icr.lastrowid
-                    n_tile += 1
-
-                # now the tile is guaranteed to exist
-                label_param['page_id'] = page_id
-                label_param['style'] = row[3]
-                label_param['weight'] = row[4]
-                label_param['name'] = row[6]
-                label_param['globe'] = row[7]
-                label_param['lat'] = lat
-                label_param['lon'] = lon
-                label_param['tile_id'] = tile_id
-
-                query = "CALL InsertLabel($(page_id)s, %(lang_id), %(name)s,%(style)s,%(globe)s, %(lat)s,%(lon)s,%(weight)s,%(tile_id)s, %(rev)s)");
-                icr.execute(query, label_param)
+                query = "INSERT INTO wma_tile (x,y,z,xh,yh) VALUES (%(x)s,%(y)s,%(z)s,%(xh)s,%(yh)s)"
+                icr.execute(query, tile_param)
+                label_param['tile_id'] = icr.lastrowid
                 idb.commit()
 
+            n_tile += 1
+        else:
+            label_param['tile_id'] = tile_list[(x,y)]
+            
 
-            if n_tot % 1000 == 0:
-                print("%d rows processed, %d tile inserted" % (n_tot, n_tile))
+        # now the tile is guaranteed to exist
+        label_param['page_id'] = page_id
+        label_param['style'] = row[3]
+        label_param['weight'] = row[4]
+        label_param['name'] = row[6]
+        label_param['globe'] = row[7]
+        label_param['lat'] = lat
+        label_param['lon'] = lon
 
-        min_page += step_page
-        max_page += step_page
+        label_batch.append(label_param.copy())
+
+        n_tot += 1
+
+        #with idb.cursor() as icr:
+        #    query = 'INSERT INTO wma_label (page_id,lang_id,name,style,lat,lon,weight,globe) VALUES (%(page_id)s, %(lang_id)s, %(name)s, %(style)s, %(lat)s, %(lon)s, %(weight)s, %(globe)s)'
+        #    print(query)
+        #    icr.execute(query, label_param)
+        #    print("executed")
+        #    label_id = icr.lastrowid
+        #    idb.commit()
+        #    print("commited")
+
+        #with idb.cursor() as icr:
+        #    query = 'INSERT INTO wma_connect (tile_id,label_id,rev) VALUES (%s, %s, %s)'
+        #    print(query)
+        #    icr.execute(query, (label_param['tile_id'], label_id, rev))
+        #    print("executed")
+        #    idb.commit()
+        #    print("commited")
+
+
+        if n_tot % 1000 == 0:
+            print("%d rows processed, %d tile inserted" % (n_tot, n_tile))
+
+    # insert batch of labels
+    print("Inserting batch...")
+    with idb.cursor() as icr:
+        query = "CALL InsertLabel(%(page_id)s, %(lang_id)s, %(name)s, %(style)s, %(globe)s, %(lat)s, %(lon)s, %(weight)s, %(tile_id)s, %(rev)s)"
+        icr.executemany(query, label_batch)
+        idb.commit()
+
+    min_coord += step_coord
+    max_coord += step_coord
+
 
 print("Done. %d rows processed, %d tile inserted" % (n_tot, n_tile))
