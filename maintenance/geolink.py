@@ -190,8 +190,10 @@ def parse(link, name, weight):
     if 'title' in qs and qs['title'][0]:
         name = qs['title'][0]
         weight = 0
+        bad = False
     else:
         name = shortenName(name)
+        bad = True
 
     # calculate final weight
     weight = (weight + pop/20 + scale - len(name)**2)
@@ -203,5 +205,6 @@ def parse(link, name, weight):
         'weight': weight,
         'scale': scale,
         'title': name,
-        'globe': globe
+        'globe': globe,
+        'bad': bad
     }

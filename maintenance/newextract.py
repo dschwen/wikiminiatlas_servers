@@ -66,6 +66,7 @@ max_page = min_page + step_page
 last_geo = None
 
 while min_page <= global_max_page:
+    # get data for extracting coordinates
     query = "SELECT page_id, page_title, page_len, SUBSTRING(el_to, POSITION('geohack.php' IN el_to) + 12) AS params "\
             "FROM externallinks, page "\
             "WHERE page_namespace=0 AND page_id >= %d AND page_id < %d AND el_from = page_id AND el_to LIKE '%%geohack.php?%%' "\
@@ -100,7 +101,7 @@ while min_page <= global_max_page:
 
                 with tdb.cursor() as tcr:
                     geo['page_id'] = page_id
-                    query = 'INSERT INTO coord_' + lang + ' (page_id, lat, lon, style, weight, scale, title, globe) VALUES (%(page_id)s, %(lat)s, %(lon)s, %(style)s, %(weight)s, %(scale)s, %(title)s, %(globe)s)'
+                    query = 'INSERT INTO coord_' + lang + ' (page_id, lat, lon, style, weight, scale, title, globe, bad) VALUES (%(page_id)s, %(lat)s, %(lon)s, %(style)s, %(weight)s, %(scale)s, %(title)s, %(globe)s, %(bad)s)'
                     tcr.execute(query, geo)
                     tdb.commit()
         except:
