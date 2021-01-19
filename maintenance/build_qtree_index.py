@@ -32,7 +32,9 @@ n_tile = 0
 with tdb.cursor() as tcr:
     tcr.execute('SELECT MAX(coord_id) FROM coord_' + lang)
     global_max_coord = tcr.fetchone()[0];
-print("Largest page_id is %d." % global_max_coord)
+    tcr.execute('SELECT MIN(coord_id) FROM coord_' + lang)
+    global_min_coord = tcr.fetchone()[0];
+print("Found coord_id %d - %d." % (global_min_coord, global_max_coord))
 
 #
 # build bad list
@@ -97,7 +99,7 @@ print("%d tiles found." % len(tile_list.keys()))
 # get coordinates
 #
 step_coord = 20000
-min_coord = 0
+min_coord = global_min_coord
 max_coord = min_coord + step_coord
 
 while min_coord <= global_max_coord:
@@ -156,28 +158,11 @@ while min_coord <= global_max_coord:
         label_param['lat'] = lat
         label_param['lon'] = lon
 
+        # add label to batch 
         label_batch.append(label_param.copy())
-
         n_tot += 1
 
-        #with idb.cursor() as icr:
-        #    query = 'INSERT INTO wma_label (page_id,lang_id,name,style,lat,lon,weight,globe) VALUES (%(page_id)s, %(lang_id)s, %(name)s, %(style)s, %(lat)s, %(lon)s, %(weight)s, %(globe)s)'
-        #    print(query)
-        #    icr.execute(query, label_param)
-        #    print("executed")
-        #    label_id = icr.lastrowid
-        #    idb.commit()
-        #    print("commited")
-
-        #with idb.cursor() as icr:
-        #    query = 'INSERT INTO wma_connect (tile_id,label_id,rev) VALUES (%s, %s, %s)'
-        #    print(query)
-        #    icr.execute(query, (label_param['tile_id'], label_id, rev))
-        #    print("executed")
-        #    idb.commit()
-        #    print("commited")
-
-
+        # status update
         if n_tot % 1000 == 0:
             print("%d rows processed, %d tile inserted" % (n_tot, n_tile))
 
