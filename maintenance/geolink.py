@@ -174,7 +174,7 @@ def parse(link, name, weight):
     # deal with scale
     scale = 0
     if 'scale' in aux:
-        scale = int(aux['scale'])
+        scale = int(aux['scale'].replace(',','').replace('.',''))
 
     # deal with dim (do something fancier in the future)
     if 'dim' in aux:
@@ -183,8 +183,10 @@ def parse(link, name, weight):
         except:
             if aux['dim'][-2:] == 'km':
                 scale = int(float(aux['dim'][:-2]) * 1000)
-            if aux['dim'][-2:] == 'mi':
+            elif aux['dim'][-2:] == 'mi':
                 scale = int(float(aux['dim'][:-2]) * 1609.3)
+            elif aux['dim'][-1:] == 'm':
+                scale = int(aux['dim'][:-1])
 
     # process page name or title
     if 'title' in qs and qs['title'][0]:
