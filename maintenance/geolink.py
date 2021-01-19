@@ -187,8 +187,8 @@ def parse(link, name, weight):
                 scale = int(float(aux['dim'][:-2]) * 1609.3)
 
     # process page name or title
-    if 'title' in aux and aux['title']:
-        name = aux['title']
+    if 'title' in qs and qs['title'][0]:
+        name = qs['title'][0]
         weight = 0
     else:
         name = shortenName(name)
