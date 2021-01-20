@@ -72,54 +72,54 @@ def parse(link, name, weight):
         lon = match.group(4)
     else:
         if params[1] in list_n:
-            lat = float(params[0])
+            lat = float(params[0].replace(',','.'))
             offset = 2
 
         elif params[1] in list_s:
-            lat = -float(params[0])
+            lat = -float(params[0].replace(',','.'))
             offset = 2
 
         elif params[2] in list_n:
-            lat = float(params[0]) + float(params[1] or '0') / 60.0
+            lat = float(params[0].replace(',','.')) + float(params[1].replace(',','.') or '0') / 60.0
             offset = 3
 
         elif params[2] in list_s:
-            lat = -float(params[0]) - float(params[1] or '0') / 60.0
+            lat = -float(params[0].replace(',','.')) - float(params[1].replace(',','.') or '0') / 60.0
             offset = 3
 
         elif params[3] in list_n:
-            lat = float(params[0]) + float(params[1] or '0') / 60.0 + float(params[2] or '0') / 3600.0
+            lat = float(params[0].replace(',','.')) + float(params[1].replace(',','.') or '0') / 60.0 + float(params[2].replace(',','.') or '0') / 3600.0
             offset = 4
 
         elif params[3] in list_s:
-            lat = -float(params[0]) - float(params[1] or '0') / 60.0 - float(params[2] or '0') / 3600.0
+            lat = -float(params[0].replace(',','.')) - float(params[1].replace(',','.') or '0') / 60.0 - float(params[2].replace(',','.') or '0') / 3600.0
             offset = 4
 
         else:
             raise ValueError("NS parse error", params)
 
         if params[offset + 1] in list_e:
-            lon = float(params[offset + 0])
+            lon = float(params[offset + 0].replace(',','.'))
             offset += 2
 
         elif params[offset + 1] in list_w:
-            lon = -float(params[offset + 0])
+            lon = -float(params[offset + 0].replace(',','.'))
             offset += 2
 
         elif params[offset + 2] in list_e:
-            lon = float(params[offset + 0]) + float(params[offset + 1] or '0') / 60.0
+            lon = float(params[offset + 0].replace(',','.')) + float(params[offset + 1].replace(',','.') or '0') / 60.0
             offset += 3
 
         elif params[offset + 2] in list_w:
-            lon = -float(params[offset + 0]) - float(params[offset + 1] or '0') / 60.0
+            lon = -float(params[offset + 0].replace(',','.')) - float(params[offset + 1].replace(',','.') or '0') / 60.0
             offset += 3
 
         elif params[offset + 3] in list_e:
-            lon = float(params[offset + 0]) + float(params[offset + 1] or '0') / 60.0 + float(params[offset + 2] or '0') / 3600.0
+            lon = float(params[offset + 0].replace(',','.')) + float(params[offset + 1].replace(',','.') or '0') / 60.0 + float(params[offset + 2].replace(',','.') or '0') / 3600.0
             offset += 4
 
         elif params[offset + 3] in list_w:
-            lon = -float(params[offset + 0]) - float(params[offset + 1] or '0') / 60.0 - float(params[offset + 2] or '0') / 3600.0
+            lon = -float(params[offset + 0].replace(',','.')) - float(params[offset + 1].replace(',','.') or '0') / 60.0 - float(params[offset + 2].replace(',','.') or '0') / 3600.0
             offset += 4
 
         else:
@@ -173,11 +173,11 @@ def parse(link, name, weight):
 
     # deal with scale
     scale = 0
-    if 'scale' in aux:
+    if 'scale' in aux and aux['scale']:
         scale = int(aux['scale'].replace(',','').replace('.',''))
 
     # deal with dim (do something fancier in the future)
-    if 'dim' in aux:
+    if 'dim' in aux and aux['dim']:
         try:
             scale = int(aux['dim'])
         except:

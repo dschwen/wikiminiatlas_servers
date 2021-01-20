@@ -49,9 +49,9 @@ n_fail = 0
 #
 with tdb.cursor() as tcr:
     tcr.execute("DELETE FROM coord_%s" % lang)
-    tcr.commit()
+    tdb.commit()
     tcr.execute("ALTER TABLE coord_%s AUTO_INCREMENT = 1" % lang)
-    tcr.commit()
+    tdb.commit()
 
 #
 # get largest pageid
