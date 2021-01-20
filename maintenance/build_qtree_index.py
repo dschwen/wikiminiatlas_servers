@@ -44,7 +44,7 @@ bad_list = []
 with tdb.cursor() as tcr:
     tcr.execute('SELECT page_id, count(*) AS count FROM coord_sco WHERE bad=1 GROUP BY page_id HAVING count > 5')
     for row in tcr:
-        bad_list.append(row[1])
+        bad_list.append(row[0])
 bad_set = set(bad_list)
 
 #

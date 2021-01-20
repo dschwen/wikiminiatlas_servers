@@ -49,7 +49,7 @@ with open(os.path.join(os.path.dirname(__file__), 'master.inc'), "w") as inc_fil
     inc_file.write(");\n")
 
     # revisions
-    inc_file.write("$rev = array(")
+    inc_file.write("$lrev = array(")
     inc_file.write(", ".join(["'%s'=>%d" % (lang, rev) for lang, rev in rev_dict.items()]))
     inc_file.write(");\n")
 
