@@ -42,7 +42,7 @@ print("Found coord_id %d - %d." % (global_min_coord, global_max_coord))
 print('Building badlist...')
 bad_list = []
 with tdb.cursor() as tcr:
-    tcr.execute('SELECT page_id, count(*) AS count FROM coord_sco WHERE bad=1 GROUP BY page_id HAVING count > 5')
+    tcr.execute('SELECT page_id, count(*) AS count FROM coord_' + lang + ' WHERE bad=1 GROUP BY page_id HAVING count > 5')
     for row in tcr:
         bad_list.append(row[0])
 bad_set = set(bad_list)
