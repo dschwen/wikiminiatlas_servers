@@ -31,9 +31,9 @@ n_tile = 0
 #
 with tdb.cursor() as tcr:
     tcr.execute('SELECT MAX(coord_id) FROM coord_' + lang)
-    global_max_coord = tcr.fetchone()[0];
+    global_max_coord = tcr.fetchone()[0]
     tcr.execute('SELECT MIN(coord_id) FROM coord_' + lang)
-    global_min_coord = tcr.fetchone()[0];
+    global_min_coord = tcr.fetchone()[0]
 print("Found coord_id %d - %d." % (global_min_coord, global_max_coord))
 
 #
@@ -60,7 +60,7 @@ with tdb.cursor() as tcr:
     tdb.commit()
 
 # map scale setting
-maxzoom = 14;
+maxzoom = 14
 fac = ((1 << maxzoom) * 3) / 180.0
 
 tile_param = {
@@ -103,7 +103,7 @@ min_coord = global_min_coord
 max_coord = min_coord + step_coord
 
 while min_coord <= global_max_coord:
-    query = "SELECT page_id, lat, lon, style, weight, scale, title, globe "\
+    query = "SELECT page_id, lat, lon, style, weight, scale, title, globe, bad "\
             "FROM coord_" + lang + " "\
             "WHERE coord_id >= %(min_coord)s AND coord_id < %(max_coord)s AND lat<=90.0 AND lat>=-90.0"
 
@@ -116,9 +116,10 @@ while min_coord <= global_max_coord:
     label_batch = []
     for row in rows:
         page_id = row[0]
+        bad = row[8]
 
         # skip coordinates from bad pages
-        if page_id in bad_set:
+        if bad and page_id in bad_set:
             continue
 
         lat = row[1]
@@ -129,7 +130,7 @@ while min_coord <= global_max_coord:
             continue
 
         y = int((90.0 + lat) / 180.0 * ((1 << maxzoom) * 3))
-        x = int( lon / 360.0 * ((1<<maxzoom)*3) * 2 );
+        x = int(lon / 360.0 * ((1 << maxzoom) * 3) * 2)
         
         # tile does not exist yet
         if not (x,y) in tile_list:

@@ -25,8 +25,9 @@ lang = {lang_list[i].lower(): i for i in range(len(lang_list))}
 #
 # rev id cache
 #
+rev_path = os.path.join(os.path.dirname(__file__), 'rev.pickle')
 try:
-    rev_file = open(".cache/rev.pickle", "rb")
+    rev_file = open(rev_path, "rb")
     rev_dict = pickle.load(rev_file)
     rev_file.close()
 except:

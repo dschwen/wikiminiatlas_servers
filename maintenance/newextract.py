@@ -61,7 +61,7 @@ while min_page <= global_max_page:
     #  get existing pages from user DB
     with tdb.cursor() as tcr:
         query = 'SELECT page_id, page_title FROM page_' + lang + ' WHERE page_id >= %d AND page_id < %d' % (min_page, max_page)
-        tcr.execute(query, coord_batch)
+        tcr.execute(query)
         rows = tcr.fetchall()
     pages = {row[0]: row[1] for row in rows}
 
@@ -79,26 +79,33 @@ while min_page <= global_max_page:
         page_id = row[0]
         page_title = row[1]
 
-        if page_id in pages:
-            # page exits...
-            if pages[page_id] != page_title:
-                # but was renamed (TODO! delete old entry and add to insert batch)
-                print("Warning: Page was renamed '%s' -> '%s'!")
-        else:
+        if page_id in pages and pages[page_id] != page_title:
+            # page exits but was renamed. delete old entry db row
+            print("Warning: Page was renamed '%s' -> '%s'!" % (pages[page_id], page_title))
+
+            with tdb.cursor() as tcr:
+                tcr.execute("DELETE FROM page_%s WHERE page_id=%d" % (lang, page_id))
+                tdb.commit()
+
+            # delete dict entry to trigger batch insert below
+            del pages[page_id]
+
+        if not page_id in pages:
             # new page, insert title into db
-            page_batch.append((page_id, page_title, row[2])
+            page_batch.append((page_id, page_title, row[2]))
             pages[page_id] = page_title
             n_ins += 1
 
         # process coordinates
         try:
             geo = geolink.parse(row[3].decode('utf-8'), page_title.decode('utf-8').replace('_', ' '), row[2])
+            geo['page_id'] = page_id
 
             # check if we just inserted this coordinate
             if geo == last_geo:
                 n_skip += 1
             else:
-                last_geo =  geo.copy()
+                last_geo = geo.copy()
                 if not page_id in coord_dict:
                     coord_dict[page_id] = [geo.copy()]
                 else:
