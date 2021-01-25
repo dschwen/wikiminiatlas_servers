@@ -2,6 +2,7 @@
 
 import re
 import os
+import math
 from urllib import parse as urllib_parse
 
 us_states = "Alabama|Alaska|Arizona|Arkansas|California|Colorado|Connecticut|Delaware|Florida|Georgia|Hawaii|Idaho|Illinois|Indiana|Iowa|Kansas|Kentucky|Louisiana|Maine|Maryland|Massachusetts|Michigan|Minnesota|Mississippi|Missouri|Montana|Nebraska|Nevada|New Hampshire|New Jersey|New Mexico|New York|North Carolina|North Dakota|Ohio|Oklahoma|Oregon|Pennsylvania|Rhode Island|South Carolina|South Dakota|Tennessee|Texas|Utah|Vermont|Virginia|Washington|West Virginia|Wisconsin|Wyoming"
@@ -199,6 +200,15 @@ def parse(link, name, weight):
 
     # calculate final weight
     weight = (weight + pop/20 + scale - len(name)**2)
+
+    if math.isnan(lat):
+        raise ValueError("Lattitude is NaN")
+    if math.isnan(lon):
+        raise ValueError("Longitude is NaN")
+    if math.isnan(weight):
+        raise ValueError("Weight is NaN")
+    if math.isnan(scale):
+        raise ValueError("Scale is NaN")
 
     return {
         'lat': lat,

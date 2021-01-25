@@ -8,7 +8,11 @@
 import toolforge
 import geolink
 import pickle
+import time
 import sys
+import os
+
+start_time = time.time()
 
 #
 # get language to process
@@ -34,6 +38,12 @@ n_skip = 0
 n_fail = 0
 
 #
+# Open log file
+#
+log = open(os.path.join(os.path.dirname(__file__), 'logs/log_%s.html' % lang), "w")
+log.write("<html><head><meta charset='UTF-8'></head><body><p><a href='/status.php'>back...</a></p>")
+
+#
 # clear out the temporary coordinates table
 #
 with tdb.cursor() as tcr:
@@ -47,15 +57,20 @@ with tdb.cursor() as tcr:
 #
 ccr.execute('SELECT MAX(el_from) FROM externallinks')
 global_max_page = ccr.fetchone()[0];
-print("Largest page_id is %d." % global_max_page)
+ccr.execute('SELECT MIN(el_from) FROM externallinks')
+global_min_page = ccr.fetchone()[0];
+print("page_id are %d - %d." % (global_min_page, global_max_page))
+log.write("<p>Found page_id %d - %d.</p>" % (global_min_page, global_max_page))
 
 #
 # Get page name, length and geohack link parameter
 #
 step_page = 20000
-min_page = 0
+min_page = global_min_page
 max_page = min_page + step_page
 last_geo = None
+
+log.write("<ul>")
 
 while min_page <= global_max_page:
     #  get existing pages from user DB
@@ -111,8 +126,9 @@ while min_page <= global_max_page:
                 else:
                     coord_dict[page_id].append(geo.copy())
 
-        except:
+        except Exception as e:
             print("Fail on page '%s': %s" % (row[1].decode('utf-8'), row[3].decode('utf-8')))
+            log.write("<li><a href='https://%(lang)s.wikipedia.org/wiki/%(page)s'>%(page)s</a> : %(link)s<br/>%(except)s</li>" % {'lang': lang, 'page': row[1].decode('utf-8').replace("'","&#39;"), 'link': row[3].decode('utf-8'), 'except': str(e)})
             n_fail += 1
 
         n_tot += 1
@@ -150,3 +166,13 @@ while min_page <= global_max_page:
     max_page += step_page
 
 print("Done. %d rows processed, %d pages inserted, %d coords skipped, %d coords unparsable" % (n_tot, n_ins, n_skip, n_fail))
+
+stop_time = time.time()
+
+#
+# Close log
+#
+log.write("</ul>")
+log.write("<p>%d rows processed<br/>%d pages inserted<br/>%d coords skipped<br/>%d coords unparsable<br/>%d seconds.</p>" % (n_tot, n_ins, n_skip, n_fail, int(stop_time-start_time)))
+log.write("</body></html>")
+log.close()
