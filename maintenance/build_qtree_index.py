@@ -53,8 +53,8 @@ bad_set = set(bad_list)
 print('Flushing connectors...')
 with tdb.cursor() as tcr:
     query = "DELETE c.*, l.* "\
-            "FROM wma_connect c, wma_label l "\
-            "WHERE c.label_id = l.id AND c.rev=%(rev)d AND l.lang_id=%(lang_id)d" % {'rev': rev, 'lang_id': lang_id}
+            "FROM wma_connect_%(lang)s c, wma_label_%(lang)s l "\
+            "WHERE c.label_id = l.id AND c.rev=%(rev)d" % {'rev': rev, 'lang': lang}
     rows = tcr.execute(query)
     print("%d rows deleted" % rows)
     tdb.commit()
@@ -73,7 +73,6 @@ tile_param = {
 
 label_param = {
     'page_id': None,
-    'lang_id': lang_id,
     'name': None,
     'style': None,
     'globe': None,
@@ -170,7 +169,7 @@ while min_coord <= global_max_coord:
     # insert batch of labels
     print("Inserting batch...")
     with idb.cursor() as icr:
-        query = "CALL InsertLabel(%(page_id)s, %(lang_id)s, %(name)s, %(style)s, %(globe)s, %(lat)s, %(lon)s, %(weight)s, %(tile_id)s, %(rev)s)"
+        query = "CALL InsertLabel_" + lang + "(%(page_id)s, %(name)s, %(style)s, %(globe)s, %(lat)s, %(lon)s, %(weight)s, %(tile_id)s, %(rev)s)"
         icr.executemany(query, label_batch)
         idb.commit()
 

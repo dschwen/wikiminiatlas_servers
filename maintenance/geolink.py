@@ -69,8 +69,8 @@ def parse(link, name, weight):
     match = semicolon_re.match(params[0])
     if match:
         # matches the uncommon lat;lon syntax
-        lat = match.group(1)
-        lon = match.group(4)
+        lat = float(match.group(1))
+        lon = float(match.group(4))
     else:
         if params[1] in list_n:
             lat = float(params[0].replace(',','.'))

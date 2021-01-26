@@ -11,11 +11,13 @@ import os
 lang = sys.argv[1]
 rev = int(sys.argv[2])
 
-# load languages list
+# load languages list (just verify it is in the list)
 with open(os.path.join(os.path.dirname(__file__), 'languages.dat')) as lang_file:
-    lang_id = [i.rstrip('\n') for i in lang_file.readlines()].index(lang)
+    if not lang in [i.rstrip('\n') for i in lang_file.readlines()]:
+        print("Unknown language")
+        sys.exit(1)
 
-print("Processing %s (%d) wiki. Revison %d." % (lang, lang_id, rev))
+print("Processing %s wiki. Revison %d." % (lang, rev))
 
 #
 # Connect to database (tdb for reading, idb for tile insertion)
@@ -45,12 +47,12 @@ for zoom in range(maxzoom - 1, -1, -1):
     zoompo = zoom + 1
 
     query = "DELETE QUICK c.* "\
-            "FROM wma_connect c, wma_label l, wma_tile t "\
+            "FROM wma_connect_" + lang + " c, wma_label_" + lang + " l, wma_tile t "\
             "WHERE c.label_id = l.id AND c.tile_id=t.id AND c.rev=%(rev)s "\
-            "AND l.lang_id=%(lang_id)s AND t.z=%(zoom)s"
+            "AND t.z=%(zoom)s"
 
     with tdb.cursor() as tcr:
-        rows = tcr.execute(query, {'lang_id': lang_id, 'rev': rev, 'zoom': zoom})
+        rows = tcr.execute(query, {'rev': rev, 'zoom': zoom})
         print("%d connectors deleted" % rows)
         tdb.commit()
 
@@ -66,17 +68,17 @@ for zoom in range(maxzoom - 1, -1, -1):
         tdb.commit()
 
 
-    query = "INSERT INTO wma_connect (tile_id,label_id,rev) "\
+    query = "INSERT INTO wma_connect_" + lang + " (tile_id,label_id,rev) "\
             "SELECT tileid, label_id, %(rev)s "\
             "FROM ( "\
             "    SELECT c.tile_id AS tid, c.label_id, t2.id AS tileid, l.globe "\
-            "    FROM wma_connect c, wma_label l, wma_tile t, wma_tile t2 "\
+            "    FROM wma_connect_" + lang + " c, wma_label_" + lang + " l, wma_tile t, wma_tile t2 "\
             "    WHERE t.id = c.tile_id AND l.id = c.label_id AND t.z=%(zoompo)s AND c.rev=%(rev)s "\
-            "    AND l.lang_id=%(lang_id)s AND t2.z=%(zoom)s AND t2.x=t.xh AND t2.y=t.yh "\
+            "    AND t2.z=%(zoom)s AND t2.x=t.xh AND t2.y=t.yh "\
             "    ORDER BY t.id,l.globe,l.weight DESC"\
             ") AS low_level_tiles "\
             "GROUP BY tid, globe"
 
     with tdb.cursor() as tcr:
-        tcr.execute(query, {'lang_id': lang_id, 'rev': rev, 'zoom': zoom, 'zoompo': zoompo})
+        tcr.execute(query, {'rev': rev, 'zoom': zoom, 'zoompo': zoompo})
         tdb.commit()
