@@ -172,6 +172,12 @@ def parse(link, name, weight):
                 if pop >= 1000000:
                     style = 9
 
+    # deal with malformed commons coords (multiple type)
+    if 'type:camera' in params or 'class:camera' in params:
+        type = 'camera'
+    elif 'type:object' in params or 'class:object' in params:
+        type = 'object'
+
     # determine heading (if provided)
     heading = None
     if 'heading' in aux:
