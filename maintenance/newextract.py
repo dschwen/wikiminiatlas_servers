@@ -155,7 +155,9 @@ while min_page <= global_max_page:
                         weight_factor *= cat_weight[cat]
 
                 geo['weight'] = weight_factor
-                geo['title'] = page_title.decode('utf-8') + '|' + iw + '|' + ih + '|' + (geo['heading'] is None ? '' : geo['heading'])
+                geo['title'] = page_title.decode('utf-8') + '|' + str(iw) + '|' + str(ih) + '|'
+                if geo['heading'] is not None:
+                    geo['title'] += str(geo['heading'])
 
             # check if we just inserted this coordinate
             if geo == last_geo:
@@ -169,6 +171,7 @@ while min_page <= global_max_page:
 
         except Exception as e:
             print("Fail on page '%s': %s" % (row[1].decode('utf-8'), row[3].decode('utf-8')))
+            print(str(e))
             log.write("<li><a href='https://%(lang)s.wikipedia.org/wiki/%(page)s'>%(page)s</a> : %(link)s<br/>%(except)s</li>" % {'lang': lang, 'page': row[1].decode('utf-8').replace("'","&#39;"), 'link': row[3].decode('utf-8'), 'except': str(e)})
             n_fail += 1
 
@@ -195,13 +198,13 @@ while min_page <= global_max_page:
             # keep only one coordinate, preferably type:camera
             found = False
             for i in c:
-                if i['type'].lower() == 'camera':
+                if i['type'] == 'camera':
                     coord_batch.append(i)
                     found = True
                     break
             if not found:
                 for i in c:
-                    if i['type'].lower() == 'object':
+                    if i['type'] == 'object':
                         coord_batch.append(i)
                         break
     else:
