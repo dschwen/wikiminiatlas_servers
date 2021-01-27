@@ -131,9 +131,10 @@ def parse(link, name, weight):
     except:
         aux = {}
 
-    # determine style index
+    # determine type and style index
     style = 0
     pop = 0
+    type = None
     if 'type' in aux:
         type = aux['type']
 
@@ -165,6 +166,11 @@ def parse(link, name, weight):
                     style = 5
                 if pop >= 1000000:
                     style = 9
+
+    # determine heading (if provided)
+    heading = None
+    if 'heading' in aux:
+        heading = float(aux['heading'])
 
     # planetary body (default to 0 = earth)
     globe = 0
@@ -218,5 +224,7 @@ def parse(link, name, weight):
         'scale': scale,
         'title': name,
         'globe': globe,
-        'bad': bad
+        'bad': bad,
+        'type': type,
+        'heading': heading
     }
