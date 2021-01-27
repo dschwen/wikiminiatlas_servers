@@ -42,10 +42,15 @@ def shortenName(name):
 
     return name
 
+# valid cardinal directions
 list_n = ['n', 'N']
 list_e = ['e', 'E', 'o', 'O']
 list_s = ['s', 'S']
 list_w = ['w', 'W']
+
+# valid headings
+headings_list = ['n', 'nbe', 'nne', 'nebn', 'ne', 'nebe', 'ene', 'ebn', 'e', 'ebs', 'ese', 'sebe', 'se', 'sebs', 'sse', 'sbe', 's', 'sbw', 'ssw', 'swbs', 'sw', 'swbw', 'wsw', 'wbs', 'w', 'wbn', 'wnw', 'nwbw', 'nw', 'nwbn', 'nnw', 'nbw']
+headings = {dir: n*11.25 for n, dir in enumerate(headings_list)}
 
 # load globes list
 with open(os.path.join(os.path.dirname(__file__), 'globes.dat')) as globes_file:
@@ -170,7 +175,11 @@ def parse(link, name, weight):
     # determine heading (if provided)
     heading = None
     if 'heading' in aux:
-        heading = float(aux['heading'])
+        heading = aux['heading'].lower()
+        if heading in headings:
+            heading = headings[heading]
+        else:
+            heading = float(heading)
 
     # planetary body (default to 0 = earth)
     globe = 0

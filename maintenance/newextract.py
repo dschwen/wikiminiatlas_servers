@@ -132,10 +132,8 @@ while min_page <= global_max_page:
         try:
             geo = geolink.parse(row[3].decode('utf-8'), page_title.decode('utf-8').replace('_', ' '), row[2])
             geo['page_id'] = page_id
-            if lang == 'commons':
-                geo['iw'] = iw
-                geo['ih'] = ih
 
+            if lang == 'commons':
                 # size in bytes and pixel count
                 iw = row[4]
                 ih = row[5]
@@ -154,6 +152,8 @@ while min_page <= global_max_page:
                         weight_factor *= cat_weight[cat]
 
                 geo['weight'] = weight_factor
+                geo['iw'] = iw
+                geo['ih'] = ih
 
             # check if we just inserted this coordinate
             if geo == last_geo:
