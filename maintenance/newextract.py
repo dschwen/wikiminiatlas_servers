@@ -152,8 +152,7 @@ while min_page <= global_max_page:
                         weight_factor *= cat_weight[cat]
 
                 geo['weight'] = weight_factor
-                geo['iw'] = iw
-                geo['ih'] = ih
+                geo['title'] = page_title.decode('utf-8') + '|' + iw + '|' + ih + '|' + (geo['heading'] is None ? '' : geo['heading'])
 
             # check if we just inserted this coordinate
             if geo == last_geo:
@@ -196,10 +195,7 @@ while min_page <= global_max_page:
     # batch insert coords
     with tdb.cursor() as tcr:
         geo['page_id'] = page_id
-        if lang == 'commons':
-            query = 'INSERT INTO coord_commons (page_id, lat, lon, style, weight, scale, title, globe, bad, heading, iw, ih) VALUES (%(page_id)s, %(lat)s, %(lon)s, %(style)s, %(weight)s, %(scale)s, %(title)s, %(globe)s, %(bad)s, %(heading)s, %(iw)s, %(ih)s)'
-        else:
-            query = 'INSERT INTO coord_' + lang + ' (page_id, lat, lon, style, weight, scale, title, globe, bad) VALUES (%(page_id)s, %(lat)s, %(lon)s, %(style)s, %(weight)s, %(scale)s, %(title)s, %(globe)s, %(bad)s)'
+        query = 'INSERT INTO coord_' + lang + ' (page_id, lat, lon, style, weight, scale, title, globe, bad) VALUES (%(page_id)s, %(lat)s, %(lon)s, %(style)s, %(weight)s, %(scale)s, %(title)s, %(globe)s, %(bad)s)'
         tcr.executemany(query, coord_batch)
         tdb.commit()
 
