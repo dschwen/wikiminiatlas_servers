@@ -63,6 +63,16 @@ print("page_id are %d - %d." % (global_min_page, global_max_page))
 log.write("<p>Found page_id %d - %d.</p>" % (global_min_page, global_max_page))
 
 #
+# Weight data for commons images
+#
+cat_weight = {
+  'Featured_pictures_on_Wikimedia_Commons': 50,
+  'Quality_images': 10,
+  'Valued_images', 5,
+  'Self-published_work': 2
+}
+
+#
 # Get page name, length and geohack link parameter
 #
 step_page = 20000
@@ -81,11 +91,18 @@ while min_page <= global_max_page:
     pages = {row[0]: row[1] for row in rows}
 
     # get data for extracting coordinates
-    query = "SELECT page_id, page_title, page_len, SUBSTRING(el_to, POSITION('geohack.php' IN el_to) + 12) AS params "\
-            "FROM externallinks, page "\
-            "WHERE page_namespace=0 AND page_id >= %d AND page_id < %d AND el_from = page_id AND el_to LIKE '%%geohack.php?%%' "\
-            "HAVING LENGTH(params)>8" % (min_page, max_page)
-    ccr.execute(query)
+    if lang == 'commons:'
+        query = "SELECT page_id, page_title, img_size, SUBSTRING(el_to, POSITION('geohack.php' IN el_to) + 12) AS params, img_width, img_height, GROUP_CONCAT( DISTINCT cl_to SEPARATOR '|') "\
+                "FROM externallinks, image, page LEFT JOIN categorylinks ON cl_from = page_id "\
+                "WHERE page_namespace=6 AND page_id >= %d AND page_id < %d AND image_name = page_title AND el_from = page_id AND el_to LIKE '%%geohack.php?%%' "\
+                "GROUP BY page_id "\
+                "HAVING LENGTH(params)>8"
+    else
+        query = "SELECT page_id, page_title, page_len, SUBSTRING(el_to, POSITION('geohack.php' IN el_to) + 12) AS params "\
+                "FROM externallinks, page "\
+                "WHERE page_namespace=0 AND page_id >= %d AND page_id < %d AND el_from = page_id AND el_to LIKE '%%geohack.php?%%' "\
+                "HAVING LENGTH(params)>8"
+    ccr.execute(query, (min_page, max_page))
 
     page_batch = []
     coord_dict = {}
@@ -111,10 +128,34 @@ while min_page <= global_max_page:
             pages[page_id] = page_title
             n_ins += 1
 
+        # weight factor
+        if lang == 'commons':
+          # size in bytes and pixel count
+          iw = row[4]
+          ih = row[5]
+          weight_factor = row[2] ** 0.3 + (iw * ih) ** 0.5
+
+          # slightly penalize extreme aspect ratios
+          ar = iw/ih
+          if ar < 1:
+              ar = 1 / ar
+          if ar > 1.6:
+              weight_factor /= (ar - 0.6)
+
+          # iterate over all categories
+          for cat in row[6].split('|'):
+              if cat in cat_weight:
+                  weight_factor *= cat_weight[cat]
+        else:
+          weight_factor = row[2]
+
         # process coordinates
         try:
-            geo = geolink.parse(row[3].decode('utf-8'), page_title.decode('utf-8').replace('_', ' '), row[2])
+            geo = geolink.parse(row[3].decode('utf-8'), page_title.decode('utf-8').replace('_', ' '), weight_factor)
             geo['page_id'] = page_id
+            if lang == 'commons':
+                geo['iw'] = iw
+                geo['ih'] = ih
 
             # check if we just inserted this coordinate
             if geo == last_geo:
@@ -157,7 +198,10 @@ while min_page <= global_max_page:
     # batch insert coords
     with tdb.cursor() as tcr:
         geo['page_id'] = page_id
-        query = 'INSERT INTO coord_' + lang + ' (page_id, lat, lon, style, weight, scale, title, globe, bad) VALUES (%(page_id)s, %(lat)s, %(lon)s, %(style)s, %(weight)s, %(scale)s, %(title)s, %(globe)s, %(bad)s)'
+        if lang == 'commons':
+            query = 'INSERT INTO coord_commons (page_id, lat, lon, style, weight, scale, title, globe, bad, heading, iw, ih) VALUES (%(page_id)s, %(lat)s, %(lon)s, %(style)s, %(weight)s, %(scale)s, %(title)s, %(globe)s, %(bad)s, %(heading)s, %(iw)s, %(ih)s)'
+        else:
+            query = 'INSERT INTO coord_' + lang + ' (page_id, lat, lon, style, weight, scale, title, globe, bad) VALUES (%(page_id)s, %(lat)s, %(lon)s, %(style)s, %(weight)s, %(scale)s, %(title)s, %(globe)s, %(bad)s)'
         tcr.executemany(query, coord_batch)
         tdb.commit()
 
