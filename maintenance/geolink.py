@@ -127,7 +127,8 @@ def parse(link, name, weight):
             raise ValueError("EW parse error", params)
 
     try:
-        aux = {i[0]: i[1] for i in [p.split(':') for p in params[offset:]]}
+        aux = {i[0]: i[1] for i in [p.split(':') for p in params[offset:]] if len(i) == 2}
+        print(aux)
     except:
         aux = {}
 
