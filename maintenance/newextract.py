@@ -128,34 +128,32 @@ while min_page <= global_max_page:
             pages[page_id] = page_title
             n_ins += 1
 
-        # weight factor
-        if lang == 'commons':
-          # size in bytes and pixel count
-          iw = row[4]
-          ih = row[5]
-          weight_factor = row[2] ** 0.3 + (iw * ih) ** 0.5
-
-          # slightly penalize extreme aspect ratios
-          ar = iw/ih
-          if ar < 1:
-              ar = 1 / ar
-          if ar > 1.6:
-              weight_factor /= (ar - 0.6)
-
-          # iterate over all categories
-          for cat in row[6].decode('utf-8').split('|'):
-              if cat in cat_weight:
-                  weight_factor *= cat_weight[cat]
-        else:
-          weight_factor = row[2]
-
         # process coordinates
         try:
-            geo = geolink.parse(row[3].decode('utf-8'), page_title.decode('utf-8').replace('_', ' '), weight_factor)
+            geo = geolink.parse(row[3].decode('utf-8'), page_title.decode('utf-8').replace('_', ' '), row[2])
             geo['page_id'] = page_id
             if lang == 'commons':
                 geo['iw'] = iw
                 geo['ih'] = ih
+
+                # size in bytes and pixel count
+                iw = row[4]
+                ih = row[5]
+                weight_factor = row[2] ** 0.3 + (iw * ih) ** 0.5
+
+                # slightly penalize extreme aspect ratios
+                ar = iw/ih
+                if ar < 1:
+                    ar = 1 / ar
+                if ar > 1.6:
+                    weight_factor /= (ar - 0.6)
+
+                # iterate over all categories
+                for cat in row[6].decode('utf-8').split('|'):
+                    if cat in cat_weight:
+                        weight_factor *= cat_weight[cat]
+
+                geo['weight'] = weight_factor
 
             # check if we just inserted this coordinate
             if geo == last_geo:
