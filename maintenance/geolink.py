@@ -128,7 +128,6 @@ def parse(link, name, weight):
 
     try:
         aux = {i[0]: i[1] for i in [p.split(':') for p in params[offset:]] if len(i) == 2}
-        print(aux)
     except:
         aux = {}
 

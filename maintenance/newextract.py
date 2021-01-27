@@ -68,7 +68,7 @@ log.write("<p>Found page_id %d - %d.</p>" % (global_min_page, global_max_page))
 cat_weight = {
   'Featured_pictures_on_Wikimedia_Commons': 50,
   'Quality_images': 10,
-  'Valued_images', 5,
+  'Valued_images': 5,
   'Self-published_work': 2
 }
 
@@ -91,16 +91,16 @@ while min_page <= global_max_page:
     pages = {row[0]: row[1] for row in rows}
 
     # get data for extracting coordinates
-    if lang == 'commons:'
+    if lang == 'commons':
         query = "SELECT page_id, page_title, img_size, SUBSTRING(el_to, POSITION('geohack.php' IN el_to) + 12) AS params, img_width, img_height, GROUP_CONCAT( DISTINCT cl_to SEPARATOR '|') "\
                 "FROM externallinks, image, page LEFT JOIN categorylinks ON cl_from = page_id "\
-                "WHERE page_namespace=6 AND page_id >= %d AND page_id < %d AND image_name = page_title AND el_from = page_id AND el_to LIKE '%%geohack.php?%%' "\
+                "WHERE page_namespace=6 AND page_id >= %s AND page_id < %s AND img_name = page_title AND el_from = page_id AND el_to LIKE '%%geohack.php?%%' "\
                 "GROUP BY page_id "\
                 "HAVING LENGTH(params)>8"
-    else
+    else:
         query = "SELECT page_id, page_title, page_len, SUBSTRING(el_to, POSITION('geohack.php' IN el_to) + 12) AS params "\
                 "FROM externallinks, page "\
-                "WHERE page_namespace=0 AND page_id >= %d AND page_id < %d AND el_from = page_id AND el_to LIKE '%%geohack.php?%%' "\
+                "WHERE page_namespace=0 AND page_id >= %s AND page_id < %s AND el_from = page_id AND el_to LIKE '%%geohack.php?%%' "\
                 "HAVING LENGTH(params)>8"
     ccr.execute(query, (min_page, max_page))
 
@@ -143,7 +143,7 @@ while min_page <= global_max_page:
               weight_factor /= (ar - 0.6)
 
           # iterate over all categories
-          for cat in row[6].split('|'):
+          for cat in row[6].decode('utf-8').split('|'):
               if cat in cat_weight:
                   weight_factor *= cat_weight[cat]
         else:
