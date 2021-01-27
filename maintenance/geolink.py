@@ -141,7 +141,7 @@ def parse(link, name, weight):
     pop = 0
     type = None
     if 'type' in aux:
-        type = aux['type']
+        type = aux['type'].lower()
 
         if type == 'mountain':
             style = 2

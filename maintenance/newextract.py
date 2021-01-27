@@ -83,12 +83,13 @@ last_geo = None
 log.write("<ul>")
 
 while min_page <= global_max_page:
-    #  get existing pages from user DB
-    with tdb.cursor() as tcr:
-        query = 'SELECT page_id, page_title FROM page_' + lang + ' WHERE page_id >= %d AND page_id < %d' % (min_page, max_page)
-        tcr.execute(query)
-        rows = tcr.fetchall()
-    pages = {row[0]: row[1] for row in rows}
+    #  get existing pages from user DB (not for commons)
+    if lang != 'commons':
+        with tdb.cursor() as tcr:
+            query = 'SELECT page_id, page_title FROM page_' + lang + ' WHERE page_id >= %d AND page_id < %d' % (min_page, max_page)
+            tcr.execute(query)
+            rows = tcr.fetchall()
+        pages = {row[0]: row[1] for row in rows}
 
     # get data for extracting coordinates
     if lang == 'commons':
@@ -111,22 +112,24 @@ while min_page <= global_max_page:
         page_id = row[0]
         page_title = row[1]
 
-        if page_id in pages and pages[page_id] != page_title:
-            # page exits but was renamed. delete old entry db row
-            print("Warning: Page was renamed '%s' -> '%s'!" % (pages[page_id], page_title))
+        # do not maintain page_commons, as the labels contain the full file name already
+        if lang != 'commons':
+            if page_id in pages and pages[page_id] != page_title:
+                # page exits but was renamed. delete old entry db row
+                print("Warning: Page was renamed '%s' -> '%s'!" % (pages[page_id], page_title))
 
-            with tdb.cursor() as tcr:
-                tcr.execute("DELETE FROM page_%s WHERE page_id=%d" % (lang, page_id))
-                tdb.commit()
+                with tdb.cursor() as tcr:
+                    tcr.execute("DELETE FROM page_%s WHERE page_id=%d" % (lang, page_id))
+                    tdb.commit()
 
-            # delete dict entry to trigger batch insert below
-            del pages[page_id]
+                # delete dict entry to trigger batch insert below
+                del pages[page_id]
 
-        if not page_id in pages:
-            # new page, insert title into db
-            page_batch.append((page_id, page_title, row[2]))
-            pages[page_id] = page_title
-            n_ins += 1
+            if not page_id in pages:
+                # new page, insert title into db
+                page_batch.append((page_id, page_title, row[2]))
+                pages[page_id] = page_title
+                n_ins += 1
 
         # process coordinates
         try:
@@ -175,22 +178,38 @@ while min_page <= global_max_page:
             print("%d rows processed, %d pages inserted, %d coords skipped, %d coords unparsable" % (n_tot, n_ins, n_skip, n_fail))
 
     # batch insert pages
-    with tdb.cursor() as tcr:
-        query = 'INSERT INTO page_' + lang + ' (page_id, page_title, page_len) VALUES (%s, %s, %s)'
-        try:
-            tcr.executemany(query, page_batch)
-            tdb.commit()
-        except:
-            # ignore the duplicate primary key integrity error here
-            pass
+    if lang != 'commons':
+        with tdb.cursor() as tcr:
+            query = 'INSERT INTO page_' + lang + ' (page_id, page_title, page_len) VALUES (%s, %s, %s)'
+            try:
+                tcr.executemany(query, page_batch)
+                tdb.commit()
+            except:
+                # ignore the duplicate primary key integrity error here
+                pass
 
     # process coords to insert
     coord_batch = []
-    for c in coord_dict.values():
-        for i in c:
-            # the weight of each coordinate is divided by the number of coordinates on the same page
-            i['weight'] //= len(c)
-        coord_batch += c
+    if lang == 'commons':
+        for c in coord_dict.values():
+            # keep only one coordinate, preferably type:camera
+            found = False
+            for i in c:
+                if i['type'].lower() == 'camera':
+                    coord_batch.append(i)
+                    found = True
+                    break
+            if not found:
+                for i in c:
+                    if i['type'].lower() == 'object':
+                        coord_batch.append(i)
+                        break
+    else:
+        for c in coord_dict.values():
+            for i in c:
+                # the weight of each coordinate is divided by the number of coordinates on the same page
+                i['weight'] //= len(c)
+            coord_batch += c
 
     # batch insert coords
     with tdb.cursor() as tcr:
