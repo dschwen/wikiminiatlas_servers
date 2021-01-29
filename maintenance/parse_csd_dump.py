@@ -7,12 +7,20 @@
 
 import re
 import sys
+import time
 import toolforge
 
 #
 # connect to database
 #
 tdb = toolforge.toolsdb('s51499__wikiminiatlas')
+
+#
+# clear table
+#
+with tdb.cursor() as tcr:
+    tcr.execute("DELETE FROM coord_commons_structured_data")
+    tdb.commit()
 
 #
 # regular expressions for parsing data
@@ -35,9 +43,12 @@ def writeBatch(batch):
 
     with tdb.cursor() as tcr:
         tcr.executemany(query, batch)
+        tdb.commit()
 
+    global n_total, start_time
+    now = time.time()
     n_total += len(batch)
-    print("%d items written." % n_total)
+    print("%d items written. (%.2f items/s)" % (n_total, n_total/(now-start_time)))
 
 #
 # parse coordinate data
@@ -63,6 +74,8 @@ p_dir = {
 last_m = None
 batch = []
 image = {}
+
+start_time = time.time()
 
 #
 # loop over standard input lines
@@ -97,3 +110,6 @@ for line in sys.stdin:
 if image:
     batch.append(image)
 writeBatch(batch)
+
+stop_time = time.time()
+print("Done. %d s elapsed." % int(stop_time-start_time))
