@@ -17,3 +17,5 @@ do
   echo "CREATE TABLE IF NOT EXISTS wma_connect_${lang} (id INT(11) PRIMARY KEY AUTO_INCREMENT, tile_id INT(11), label_id INT(11), rev INT(11), KEY tile_id_index (tile_id));" | mysql -h${server} ${db}
   echo "CREATE TABLE IF NOT EXISTS wma_label_${lang} (id INT(11) PRIMARY KEY AUTO_INCREMENT, page_id INT(11), name VARCHAR(255), style INT(11), lat DOUBLE(11,8), lon DOUBLE(11,8), weight INT(11), globe SMALLINT(5) UNSIGNED NOT NULL);" | mysql -h${server} ${db}
 done
+
+echo "CREATE TABLE IF NOT EXISTS  (page_id INT(8) PRIMARY KEY, camera_lat FLOAT, camera_lon FLOAT, object_lat FLOAT, object_lon FLOAT, heading FLOAT);" | mysql -h${server} ${db}
