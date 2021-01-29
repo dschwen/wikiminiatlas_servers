@@ -13,19 +13,24 @@ line_re = re.compile(".*entity/statement/M(\d+)-.*www\.wikidata\.org/prop/[^/]+/
 coord_re = re.compile("Point\(([^\s]+) ([^)]+)\)")
 
 # parse coordinate data
-def coord(v):
-    match = coord_re.match(v)
-    return (float(match.group(1)), float(match.group(2)))
+def namedCoord(name):
+    def coord(v):
+        match = coord_re.match(v)
+        return {name+'_lat': float(match.group(1)), name+'_lon': float(match.group(2))}
+    return coord
 
 # write bunch of images to database
 def writeBunch(bunch):
+    # don't do anything on empty bunches
+    if not bunch:
+        return
     print(bunch)
 
 # valid properties
 p_dir = {
-    '625': ('object', coord),
-    '1259': ('camera', coord),
-    '7787': ('heading', lambda v: float(v))
+    '625': namedCoord('object'),
+    '1259': namedCoord('camera'),
+    '7787': lambda v: {'heading': float(v)}
 }
 
 # set up initial state for bunched data extraction
@@ -57,7 +62,7 @@ for line in sys.stdin:
             last_m = m
 
         # add data to current image item
-        image[p_name] = val
+        image.update(val)
 
 # write remaining images
 if image:
