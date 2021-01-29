@@ -87,7 +87,7 @@ for line in sys.stdin:
                 batch = []
 
             # create new image item
-            image = {'page_id': m}
+            image = {'page_id': m, 'camera_lat': None, 'camera_lon': None, 'object_lat': None, 'object_lon': None, 'heading': None}
             last_m = m
 
         # add data to current image item
