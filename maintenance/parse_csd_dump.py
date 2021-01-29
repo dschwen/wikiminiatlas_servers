@@ -45,8 +45,7 @@ for line in sys.stdin:
     if match and match.group(2) in p_dir:
         # convert data
         m = int(match.group(1))
-        p_name = p_dir[match.group(2)][0]
-        val = p_dir[match.group(2)][1](match.group(3))
+        val = p_dir[match.group(2)](match.group(3))
 
         # is this a new image?
         if m != last_m:
