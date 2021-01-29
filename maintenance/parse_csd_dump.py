@@ -82,7 +82,7 @@ for line in sys.stdin:
                 batch.append(image)
 
             # write images to db if we have gathered enough
-            if len(batch) == 10:
+            if len(batch) == 1000:
                 writeBatch(batch)
                 batch = []
 
