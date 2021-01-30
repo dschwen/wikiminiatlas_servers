@@ -42,9 +42,8 @@ except:
 rev_dict[lang] = rev
 
 #
-# load rev id cache
+# write rev id cache
 #
 rev_file = open(rev_path, "wb")
 pickle.dump(rev_dict, rev_file)
 rev_file.close()
-
