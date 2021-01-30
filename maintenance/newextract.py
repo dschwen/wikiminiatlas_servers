@@ -154,10 +154,26 @@ while min_page <= global_max_page:
                     if cat in cat_weight:
                         weight_factor *= cat_weight[cat]
 
-                geo['weight'] = weight_factor
+                # image size and heading are coded into the label text string for commons
                 geo['title'] = page_title.decode('utf-8') + '|' + str(iw) + '|' + str(ih) + '|'
+
+                # encode the heading (18 means no heading info)
                 if geo['heading'] is not None:
-                    geo['title'] += str(geo['heading'])
+                    heading =  int(( (int(geo['heading']) + 360) % 360 ) / 22.5 + 0.5) % 16
+                    geo['title'] += str(heading)
+                    # heading gives a 20% score boost
+                    weight_factor *= 1.2
+                else:
+                    # no heading
+                    geo['title'] += '18'
+
+                # style = -2 cause thumbnails to be displayed at half size
+                if iw*ih < 1024**2:
+                    geo['style'] = -2
+                else:
+                    geo['style'] = -1
+
+                geo['weight'] = int(weight_factor)
 
             # check if we just inserted this coordinate
             if geo == last_geo:
