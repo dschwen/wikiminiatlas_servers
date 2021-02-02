@@ -86,7 +86,6 @@ void registerLayer(layer *l, int minzoom) {}
 
 int main(int argc, char **argv)
 {
-  std::cout << argc << "\n";
   int zoom = 0;
   if (argc > 1)
     zoom = atoi(argv[1]);
@@ -97,6 +96,7 @@ int main(int argc, char **argv)
               << " z              - Start in command mode listening on a socket, providing tiles for zoomlevel z\n";
     std::cout << argv[0] << " z basedir      - Render all tiles in zoomlevel z into basedir\n";
     std::cout << argv[0] << " z y x file.png - Render tile with the indices x,y,z into file.png\n";
+    return EXIT_SUCCESS;
   }
 
   if (zoom >= 6 && zoom < 11)
@@ -879,7 +879,6 @@ int main(int argc, char **argv)
 
   double bx1, by1, bx2, by2;
   int xx;
-  std::string base_dir = "tiles/mapnik";
   std::stringstream fname;
 
   // start in command mode for a given zoom level
@@ -1014,11 +1013,11 @@ int main(int argc, char **argv)
           mkdir(tile_dir, 0744);
       }
       else
-        tile_dir = base_dir;
+        sprintf(tile_dir, "%s", base_dir);
 
       for (int x = 0; x < 6 * (1 << z); x++)
       {
-        sprintf(tilefile, "%s/tile_%d_%d.png", tile_dir, y, x);
+        sprintf(tile_file, "%s/tile_%d_%d.png", tile_dir, y, x);
         std::cout << tile_file << std::endl;
 
         if (x >= 3 * (1 << z))
@@ -1035,7 +1034,7 @@ int main(int argc, char **argv)
 
         agg_renderer<image_rgba8> ren(m, buf);
         ren.apply();
-        save_to_file(buf, tilefile, "png");
+        save_to_file(buf, tile_file, "png");
       }
     }
 
