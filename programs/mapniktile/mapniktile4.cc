@@ -50,8 +50,14 @@
 
 const char *osm_dbname = "gis";
 const char *osm_dbuser = "osm";
+
+#ifdef DEBUGPOSTGIS
+const char *osm_dbhost = "localhost";
+const char *osm_dbport = "4444";
+#else
 const char *osm_dbhost = "osm.db.svc.eqiad.wmflabs";
 const char *osm_dbport = "5432";
+#endif
 
 const unsigned int sleep_max = 1000;
 unsigned int sleep_t = 0;
@@ -61,13 +67,15 @@ double thickfac = 2.0;
 
 using namespace mapnik;
 
-polygon_symbolizer my_poly(color c) {
+polygon_symbolizer my_poly(color c)
+{
   polygon_symbolizer ps;
   put(ps, keys::fill, c);
   return ps;
 }
 
-line_symbolizer my_line(color c, double width = 1.0) {
+line_symbolizer my_line(color c, double width = 1.0)
+{
   line_symbolizer ls;
   put(ls, keys::stroke, c);
   put(ls, keys::stroke_width, width * thickfac);
@@ -76,7 +84,8 @@ line_symbolizer my_line(color c, double width = 1.0) {
 
 void registerLayer(layer *l, int minzoom) {}
 
-int main(int argc, char **argv) {
+int main(int argc, char **argv)
+{
   std::cout << argc << "\n";
   int zoom = 6;
   if (argc == 5 || argc == 2)
@@ -87,8 +96,7 @@ int main(int argc, char **argv) {
 
   std::string plugins_dir = MAPNIK_PLUGINS;
   datasource_cache::instance().register_datasources(plugins_dir);
-  freetype_engine::register_font(
-      "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf");
+  freetype_engine::register_font("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf");
 
   // for hidpi displays we prepare 2x tiles
   Map m(256, 256);
@@ -97,10 +105,13 @@ int main(int argc, char **argv) {
   // (0.62,0.78,0.953) water =
 
   // m.setBackground(color_factory::from_string("white"));
-  if (zoom >= 8) {
+  if (zoom >= 8)
+  {
     // bg is oceans, land is plotted
     m.set_background(color(158, 199, 243));
-  } else {
+  }
+  else
+  {
     // bg is land, oceans are plotted
     m.set_background(color(250, 250, 208));
   }
@@ -175,17 +186,15 @@ int main(int argc, char **argv) {
   // Lakes (polygon)
   feature_type_style lakepoly_style;
   rule lakepoly_rule;
-  lakepoly_rule.set_filter(
-      parse_expression("[hyc] = 8 and [f_code] = 'BH000'"));
+  lakepoly_rule.set_filter(parse_expression("[hyc] = 8 and [f_code] = 'BH000'"));
   lakepoly_rule.append(my_poly(color(158, 199, 243)));
   lakepoly_style.add_rule(std::move(lakepoly_rule));
   m.insert_style("lakes", lakepoly_style);
 
   feature_type_style lake2poly_style;
   rule lake2poly_rule;
-  lake2poly_rule.set_filter(
-      parse_expression("[waterway] = 'riverbank' or [waterway] = 'dock' or "
-                       "[natural] = 'bay' or [natural] = 'water'"));
+  lake2poly_rule.set_filter(parse_expression("[waterway] = 'riverbank' or [waterway] = 'dock' or "
+                                             "[natural] = 'bay' or [natural] = 'water'"));
   lake2poly_rule.append(my_poly(color(158, 199, 243)));
   // lake2poly_rule.append(my_line(color(58, 99, 243)));
   lake2poly_style.add_rule(std::move(lake2poly_rule));
@@ -200,8 +209,7 @@ int main(int argc, char **argv) {
 
   feature_type_style grass2poly_style;
   rule grass2poly_rule;
-  grass2poly_rule.set_filter(
-      parse_expression("[natural] = 'grassland' or [natural] = 'fell'"));
+  grass2poly_rule.set_filter(parse_expression("[natural] = 'grassland' or [natural] = 'fell'"));
   grass2poly_rule.append(my_poly(color(208, 250, 208)));
   grass2poly_style.add_rule(std::move(grass2poly_rule));
   m.insert_style("grass2", grass2poly_style);
@@ -254,36 +262,32 @@ int main(int argc, char **argv) {
   // 'military','railway','commercial','industrial','residential,'retail','basin','salt_pond','orchard','cemetary','meadow','village_green','forrest'
   feature_type_style builtup2_style;
   rule builtup2_rule;
-  builtup2_rule.set_filter(
-      parse_expression("[landuse] = 'residential' or [landuse] = 'retail' or "
-                       "[landuse] = 'commercial' or [landuse] = 'industrial'"));
+  builtup2_rule.set_filter(parse_expression("[landuse] = 'residential' or [landuse] = 'retail' or "
+                                            "[landuse] = 'commercial' or [landuse] = 'industrial'"));
   builtup2_rule.append(my_poly(color(208, 208, 208)));
   builtup2_style.add_rule(std::move(builtup2_rule));
   m.insert_style("builtup2", builtup2_style);
 
   feature_type_style offlimits_style;
   rule offlimits_rule;
-  offlimits_rule.set_filter(
-      parse_expression("[landuse] = 'military' or [landuse] = 'railway'"));
+  offlimits_rule.set_filter(parse_expression("[landuse] = 'military' or [landuse] = 'railway'"));
   offlimits_rule.append(my_poly(color(224, 200, 200)));
   offlimits_style.add_rule(std::move(offlimits_rule));
   m.insert_style("offlimits", offlimits_style);
 
   feature_type_style greenuse_style;
   rule greenuse_rule;
-  greenuse_rule.set_filter(parse_expression(
-      "[landuse] = 'orchard' or [landuse] = 'cemetary' or [landuse] = 'meadow' "
-      "or [landuse] = 'village_green' or [landuse] = 'forrest' or [landuse] = "
-      "'recreation_ground' or [leisure] = 'dog_park' or [leisure] = 'garden' "
-      "or [leisure] = 'park' or [leisure] = 'pitch' or [leisure] = 'stadium'"));
+  greenuse_rule.set_filter(parse_expression("[landuse] = 'orchard' or [landuse] = 'cemetary' or [landuse] = 'meadow' "
+                                            "or [landuse] = 'village_green' or [landuse] = 'forrest' or [landuse] = "
+                                            "'recreation_ground' or [leisure] = 'dog_park' or [leisure] = 'garden' "
+                                            "or [leisure] = 'park' or [leisure] = 'pitch' or [leisure] = 'stadium'"));
   greenuse_rule.append(my_poly(color(200, 224, 200)));
   greenuse_style.add_rule(std::move(greenuse_rule));
   m.insert_style("greenuse", greenuse_style);
 
   feature_type_style blueuse_style;
   rule blueuse_rule;
-  blueuse_rule.set_filter(
-      parse_expression("[landuse] = 'basin' or [landuse] = 'salt_pond'"));
+  blueuse_rule.set_filter(parse_expression("[landuse] = 'basin' or [landuse] = 'salt_pond'"));
   blueuse_rule.append(my_poly(color(200, 200, 224)));
   blueuse_style.add_rule(std::move(blueuse_rule));
   m.insert_style("blueuse", blueuse_style);
@@ -345,8 +349,7 @@ int main(int argc, char **argv) {
   // Bridge/Causeway
   feature_type_style causeway_style;
   rule causeway_rule;
-  causeway_rule.set_filter(
-      parse_expression("[f_code] = 'AQ064' and [tuc] = 3"));
+  causeway_rule.set_filter(parse_expression("[f_code] = 'AQ064' and [tuc] = 3"));
   causeway_rule.append(my_line(color(126, 159, 194), 5.0));
   causeway_rule.append(my_line(color(255, 255, 255), 3.0));
   causeway_style.add_rule(std::move(causeway_rule));
@@ -400,8 +403,7 @@ int main(int argc, char **argv) {
   // Railroadbridge (polyline)
   feature_type_style raillines_bridge_style;
   rule raillines_bridge_rule;
-  raillines_bridge_rule.set_filter(
-      parse_expression("[f_code] = 'AQ064' and [tuc] = 4"));
+  raillines_bridge_rule.set_filter(parse_expression("[f_code] = 'AQ064' and [tuc] = 4"));
   raillines_bridge_rule.append(my_line(color(126, 159, 194), 2.0));
   raillines_bridge_rule.append(raillines_stk);
   raillines_bridge_style.add_rule(std::move(raillines_bridge_rule));
@@ -492,7 +494,8 @@ int main(int argc, char **argv) {
   m.insert_style("highway-fill", roads1_style_2);
 
   // Layers (Water/Land base)
-  if (zoom < 8) {
+  if (zoom < 8)
+  {
     // Water  polygons
     parameters p;
     p["type"] = "shape";
@@ -502,7 +505,9 @@ int main(int argc, char **argv) {
     lyr.set_datasource(datasource_cache::instance().create(p));
     lyr.add_style("ocean");
     m.add_layer(lyr);
-  } else {
+  }
+  else
+  {
     // Coastlines from processed_p OSM
     parameters p;
     p["type"] = "shape";
@@ -517,7 +522,8 @@ int main(int argc, char **argv) {
   }
 
   // Swamp  polygons
-  if (zoom <= 8) {
+  if (zoom <= 8)
+  {
     parameters p;
     p["type"] = "shape";
     p["file"] = "shp/swampa";
@@ -542,7 +548,8 @@ int main(int argc, char **argv) {
   }
 
   // Grassland  polygons
-  if (zoom <= 8) {
+  if (zoom <= 8)
+  {
     parameters p;
     p["type"] = "shape";
     p["file"] = "shp/grassa";
@@ -554,7 +561,8 @@ int main(int argc, char **argv) {
   }
 
   // Trees  polygons
-  if (zoom <= 8) {
+  if (zoom <= 8)
+  {
     parameters p;
     p["type"] = "shape";
     p["file"] = "shp/treesa";
@@ -566,25 +574,20 @@ int main(int argc, char **argv) {
   }
 
   // Lakes  polygons
-  if (zoom >= 8) {
+  if (zoom >= 8)
+  {
     parameters p;
     p["type"] = "postgis";
-#ifdef DEBUGPOSTGIS
-    p["host"] = "localhost";
-    p["port"] = "4444";
-#else
-    p["host"] = "osmdb.eqiad.wmnet";
-    p["port"] = "5432";
-#endif
+    p["host"] = osm_dbhost;
+    p["port"] = osm_dbport;
     p["dbname"] = osm_dbname;
     p["user"] = osm_dbuser;
     p["password"] = "";
     p["estimate_extent"] = "false";
     p["extent"] = "-20037508,-19929239,20037508,19929239";
-    p["table"] =
-        "(SELECT way, waterway, \"natural\" from planet_osm_polygon where ( "
-        "waterway in ('riverbank','dock') ) or ( \"natural\" in "
-        "('water','bay','wetland','wood', 'grassland','fell') ) ) as foo";
+    p["table"] = "(SELECT way, waterway, \"natural\" from planet_osm_polygon where ( "
+                 "waterway in ('riverbank','dock') ) or ( \"natural\" in "
+                 "('water','bay','wetland','wood', 'grassland','fell') ) ) as foo";
 
     layer lyr("Natural");
     lyr.set_datasource(datasource_cache::instance().create(p));
@@ -595,7 +598,9 @@ int main(int argc, char **argv) {
     lyr.add_style("woods2");
     lyr.add_style("grass2");
     m.add_layer(lyr);
-  } else {
+  }
+  else
+  {
     parameters p;
     p["type"] = "shape";
     p["file"] = "shp/inwatera";
@@ -619,27 +624,22 @@ int main(int argc, char **argv) {
   }
 
   // Builtup
-  if (zoom >= 8) {
+  if (zoom >= 8)
+  {
     parameters p;
     p["type"] = "postgis";
-#ifdef DEBUGPOSTGIS
-    p["host"] = "localhost";
-    p["port"] = "4444";
-#else
-    p["host"] = "osmdb.eqiad.wmnet";
-    p["port"] = "5432";
-#endif
+    p["host"] = osm_dbhost;
+    p["port"] = osm_dbport;
     p["dbname"] = osm_dbname;
     p["user"] = osm_dbuser;
     p["password"] = "";
     p["estimate_extent"] = "false";
     p["extent"] = "-20037508,-19929239,20037508,19929239";
-    p["table"] =
-        "(SELECT way, landuse,leisure from planet_osm_polygon where landuse in "
-        "('military','railway','commercial','industrial','residential','retail'"
-        ",'basin','salt_pond','orchard','cemetary','meadow','village_green','"
-        "forrest','recreation_ground') or leisure in "
-        "('dog_park','garden','park','pitch','stadium') ) as foo";
+    p["table"] = "(SELECT way, landuse,leisure from planet_osm_polygon where landuse in "
+                 "('military','railway','commercial','industrial','residential','retail'"
+                 ",'basin','salt_pond','orchard','cemetary','meadow','village_green','"
+                 "forrest','recreation_ground') or leisure in "
+                 "('dog_park','garden','park','pitch','stadium') ) as foo";
 
     layer lyr("Built-up Areas");
     lyr.set_datasource(datasource_cache::instance().create(p));
@@ -651,7 +651,9 @@ int main(int argc, char **argv) {
     lyr.add_style("blueuse");
     m.add_layer(lyr);
     std::cerr << "Added builtup layer\n";
-  } else {
+  }
+  else
+  {
     parameters p;
     p["type"] = "shape";
     // p["file"]="shp/builtupa";
@@ -664,16 +666,12 @@ int main(int argc, char **argv) {
   }
 
   // Streams
-  if (zoom >= 8) {
+  if (zoom >= 8)
+  {
     parameters p;
     p["type"] = "postgis";
-#ifdef DEBUGPOSTGIS
-    p["host"] = "localhost";
-    p["port"] = "4444";
-#else
-    p["host"] = "osmdb.eqiad.wmnet";
-    p["port"] = "5432";
-#endif
+    p["host"] = osm_dbhost;
+    p["port"] = osm_dbport;
     p["dbname"] = osm_dbname;
     p["user"] = osm_dbuser;
     p["password"] = "";
@@ -707,7 +705,8 @@ int main(int argc, char **argv) {
   }
 
   // National Parks
-  if (zoom >= 0) {
+  if (zoom >= 0)
+  {
     parameters p;
     p["type"] = "shape";
     p["file"] = "shp/other/nps_boundary";
@@ -719,16 +718,12 @@ int main(int argc, char **argv) {
   }
 
   // Ferry Lines, Railroadbridges, Causeways
-  if (zoom >= 7) {
+  if (zoom >= 7)
+  {
     parameters p;
     p["type"] = "postgis";
-#ifdef DEBUGPOSTGIS
-    p["host"] = "localhost";
-    p["port"] = "4444";
-#else
-    p["host"] = "osmdb.eqiad.wmnet";
-    p["port"] = "5432";
-#endif
+    p["host"] = osm_dbhost;
+    p["port"] = osm_dbport;
     p["dbname"] = osm_dbname;
     p["user"] = osm_dbuser;
     p["password"] = "";
@@ -747,16 +742,12 @@ int main(int argc, char **argv) {
   }
 
   // Railroads
-  if (zoom >= 8) {
+  if (zoom >= 8)
+  {
     parameters p;
     p["type"] = "postgis";
-#ifdef DEBUGPOSTGIS
-    p["host"] = "localhost";
-    p["port"] = "4444";
-#else
-    p["host"] = "osmdb.eqiad.wmnet";
-    p["port"] = "5432";
-#endif
+    p["host"] = osm_dbhost;
+    p["port"] = osm_dbport;
     p["dbname"] = osm_dbname;
     p["user"] = osm_dbuser;
     p["password"] = "";
@@ -775,16 +766,12 @@ int main(int argc, char **argv) {
   }
 
   // Unpaved
-  if (zoom >= 11) {
+  if (zoom >= 11)
+  {
     parameters p;
     p["type"] = "postgis";
-#ifdef DEBUGPOSTGIS
-    p["host"] = "localhost";
-    p["port"] = "4444";
-#else
-    p["host"] = "osmdb.eqiad.wmnet";
-    p["port"] = "5432";
-#endif
+    p["host"] = osm_dbhost;
+    p["port"] = osm_dbport;
     p["dbname"] = osm_dbname;
     p["user"] = osm_dbuser;
     p["password"] = "";
@@ -803,16 +790,12 @@ int main(int argc, char **argv) {
   }
 
   // Residential
-  if (zoom >= 10) {
+  if (zoom >= 10)
+  {
     parameters p;
     p["type"] = "postgis";
-#ifdef DEBUGPOSTGIS
-    p["host"] = "localhost";
-    p["port"] = "4444";
-#else
-    p["host"] = "osmdb.eqiad.wmnet";
-    p["port"] = "5432";
-#endif
+    p["host"] = osm_dbhost;
+    p["port"] = osm_dbport;
     p["dbname"] = osm_dbname;
     p["user"] = osm_dbuser;
     p["password"] = "";
@@ -832,24 +815,19 @@ int main(int argc, char **argv) {
   }
 
   // Medium roads
-  if (zoom >= 7) {
+  if (zoom >= 7)
+  {
     parameters p;
     p["type"] = "postgis";
-#ifdef DEBUGPOSTGIS
-    p["host"] = "localhost";
-    p["port"] = "4444";
-#else
-    p["host"] = "osmdb.eqiad.wmnet";
-    p["port"] = "5432";
-#endif
+    p["host"] = osm_dbhost;
+    p["port"] = osm_dbport;
     p["dbname"] = osm_dbname;
     p["user"] = osm_dbuser;
     p["password"] = "";
     p["estimate_extent"] = "false";
     p["extent"] = "-20037508,-19929239,20037508,19929239";
-    p["table"] =
-        "(SELECT way from planet_osm_line where highway in "
-        "('primary','primary_link','secondary','secondary_link')) as foo";
+    p["table"] = "(SELECT way from planet_osm_line where highway in "
+                 "('primary','primary_link','secondary','secondary_link')) as foo";
 
     layer lyr("Highway-border");
     lyr.set_datasource(datasource_cache::instance().create(p));
@@ -861,16 +839,12 @@ int main(int argc, char **argv) {
   }
 
   // Highways (roads with median)
-  if (zoom >= 6) {
+  if (zoom >= 6)
+  {
     parameters p;
     p["type"] = "postgis";
-#ifdef DEBUGPOSTGIS
-    p["host"] = "localhost";
-    p["port"] = "4444";
-#else
-    p["host"] = "osmdb.eqiad.wmnet";
-    p["port"] = "5432";
-#endif
+    p["host"] = osm_dbhost;
+    p["port"] = osm_dbport;
     p["dbname"] = osm_dbname;
     p["user"] = osm_dbuser;
     p["password"] = "";
@@ -902,7 +876,8 @@ int main(int argc, char **argv) {
 
   // get the hostname
 
-  if (argc == 2) {
+  if (argc == 2)
+  {
     int z = zoom, x, y;
     FILE *fp, *dfp;
     char readbuf[800];
@@ -924,20 +899,23 @@ int main(int argc, char **argv) {
 
     std::cout << "Entering fifo command mode for zoom=" << argv[1] << std::endl;
     fp = fopen(filename, "r");
-    while (1) {
-      if (fgets(readbuf, 800, fp) != 0) {
-        if (sscanf(readbuf, "%d %d", &x, &y) == 2) {
+    while (1)
+    {
+      if (fgets(readbuf, 800, fp) != 0)
+      {
+        if (sscanf(readbuf, "%d %d", &x, &y) == 2)
+        {
           if (z >= 7)
             sprintf(tilefile, "mapnik/%d/%d/tile_%d_%d.png", z, y, y, x);
           else
             sprintf(tilefile, "mapnik/%d/tile_%d_%d.png", z, y, x);
 
-          std::cout << "Received location y=" << y << ", x=" << x
-                    << ", fname=" << tilefile << std::endl;
+          std::cout << "Received location y=" << y << ", x=" << x << ", fname=" << tilefile << std::endl;
 
           // maybe this request was already in the queue and has been fulfilled
           dfp = fopen(tilefile, "r");
-          if (dfp) {
+          if (dfp)
+          {
             // exists
             fclose(dfp);
             std::cout << "already created file " << tilefile << std::endl;
@@ -961,11 +939,12 @@ int main(int argc, char **argv) {
           ren.apply();
 
           save_to_file(buf, tilefile, "png");
-
-        } else
+        }
+        else
           break;
         sleep_t = 0;
-      } else if (sleep_t < sleep_max)
+      }
+      else if (sleep_t < sleep_max)
         sleep_t++;
 
       usleep(sleep_t);
@@ -974,13 +953,13 @@ int main(int argc, char **argv) {
 
     return EXIT_SUCCESS;
   }
-  if (argc == 5) {
+  if (argc == 5)
+  {
     int z = zoom;
     int y = atoi(argv[2]);
     int x = atoi(argv[3]);
 
-    std::cout << "z=" << z << ", y=" << y << ", x=" << x
-              << ", fname=" << argv[4] << std::endl;
+    std::cout << "z=" << z << ", y=" << y << ", x=" << x << ", fname=" << argv[4] << std::endl;
 
     if (x >= 3 * (1 << z))
       xx = x - 6 * (1 << z);
@@ -1000,12 +979,15 @@ int main(int argc, char **argv) {
     save_to_file(buf, argv[4], "png");
 
     return EXIT_SUCCESS;
-  } else {
+  }
+  else
+  {
     //	return 1;
 
     for (int z = 6; z <= 6; z++)
       for (int x = 227; x < 6 * (1 << z); x++)
-        for (int y = 0; y < 3 * (1 << z); y++) {
+        for (int y = 0; y < 3 * (1 << z); y++)
+        {
           fname.str("");
           fname.clear();
           // fname << base_dir << "/" << (z+1) << "/" << y << "/tile_" << y <<
