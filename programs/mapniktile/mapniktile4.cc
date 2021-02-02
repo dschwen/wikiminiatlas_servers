@@ -87,9 +87,17 @@ void registerLayer(layer *l, int minzoom) {}
 int main(int argc, char **argv)
 {
   std::cout << argc << "\n";
-  int zoom = 6;
-  if (argc == 5 || argc == 2)
+  int zoom = 0;
+  if (argc > 1)
     zoom = atoi(argv[1]);
+  else
+  {
+    std::cout << "Mapnik based WikiMiniAtlas tile renderer.\n Modes of operation:\n";
+    std::cout << argv[0]
+              << " z              - Start in command mode listening on a socket, providing tiles for zoomlevel z\n";
+    std::cout << argv[0] << " z basedir      - Render all tiles in zoomlevel z into basedir\n";
+    std::cout << argv[0] << " z y x file.png - Render tile with the indices x,y,z into file.png\n";
+  }
 
   if (zoom >= 6 && zoom < 11)
     thickfac *= 1.5 / (12.0 - double(zoom));
@@ -874,14 +882,13 @@ int main(int argc, char **argv)
   std::string base_dir = "tiles/mapnik";
   std::stringstream fname;
 
-  // get the hostname
-
+  // start in command mode for a given zoom level
   if (argc == 2)
   {
     int z = zoom, x, y;
     FILE *fp, *dfp;
     char readbuf[800];
-    char filename[200], tilefile[200];
+    char filename[1024], tilefile[1024];
 
     //
     // write the pid to check up on the process later
@@ -953,6 +960,8 @@ int main(int argc, char **argv)
 
     return EXIT_SUCCESS;
   }
+
+  // render a specific tile
   if (argc == 5)
   {
     int z = zoom;
@@ -980,43 +989,59 @@ int main(int argc, char **argv)
 
     return EXIT_SUCCESS;
   }
-  else
+
+  // render a range of tiles
+  if (argc == 3)
   {
-    //	return 1;
+    int z = zoom;
+    struct stat st = {0};
+    char base_dir[1024], tile_dir[1024], tile_file[1024];
 
-    for (int z = 6; z <= 6; z++)
-      for (int x = 227; x < 6 * (1 << z); x++)
-        for (int y = 0; y < 3 * (1 << z); y++)
-        {
-          fname.str("");
-          fname.clear();
-          // fname << base_dir << "/" << (z+1) << "/" << y << "/tile_" << y <<
-          // "_" << x << ".png"; fname << z << ".new/" << y << "/tile_" << y <<
-          // "_" << x << ".png";
-          fname << z << ".new/tile_" << y << "_" << x << ".png";
-          // sprintf( tilefile, "mapnik/%d/%d/tile_%d_%d.png", z, y, y, x );
+    // make sure base dir exists
+    sprintf(base_dir, "%s/%d", argv[2], z);
+    if (stat(base_dir, &st) == -1)
+      mkdir(base_dir, 0744);
 
-          std::cout << fname.str() << std::endl;
+    // loop over all tiles at the given zoom level
+    for (int y = 0; y < 3 * (1 << z); y++)
+    {
+      // above zoomlevel 7 we add another level of subdirectories
+      if (z >= 7)
+      {
+        // make sure tile dir exists
+        sprintf(tile_dir, "%s/%d", base_dir, y);
+        if (stat(tile_dir, &st) == -1)
+          mkdir(tile_dir, 0744);
+      }
+      else
+        tile_dir = base_dir;
 
-          if (x >= 3 * (1 << z))
-            xx = x - 6 * (1 << z);
-          else
-            xx = x;
+      for (int x = 0; x < 6 * (1 << z); x++)
+      {
+        sprintf(tilefile, "%s/tile_%d_%d.png", tile_dir, y, x);
+        std::cout << tile_file << std::endl;
 
-          bx1 = xx * 60.0 / (1 << z);
-          by1 = 90.0 - (((y + 1.0) * 60.0) / (1 << z));
-          bx2 = (xx + 1) * 60.0 / (1 << z);
-          by2 = 90.0 - ((y * 60.0) / (1 << z));
+        if (x >= 3 * (1 << z))
+          xx = x - 6 * (1 << z);
+        else
+          xx = x;
 
-          m.zoom_to_box(box2d<double>(bx1, by1, bx2, by2));
+        bx1 = xx * 60.0 / (1 << z);
+        by1 = 90.0 - (((y + 1.0) * 60.0) / (1 << z));
+        bx2 = (xx + 1) * 60.0 / (1 << z);
+        by2 = 90.0 - ((y * 60.0) / (1 << z));
 
-          agg_renderer<image_rgba8> ren(m, buf);
-          ren.apply();
-          save_to_file(buf, fname.str(), "png");
-        }
+        m.zoom_to_box(box2d<double>(bx1, by1, bx2, by2));
+
+        agg_renderer<image_rgba8> ren(m, buf);
+        ren.apply();
+        save_to_file(buf, tilefile, "png");
+      }
+    }
 
     //$file = $dir.'cache/zoom'.$z.'/'.$x.'_'.$y.'_'.$z.'.jpg';
+    return EXIT_SUCCESS;
   }
 
-  return EXIT_SUCCESS;
+  return EXIT_FAILURE;
 }
