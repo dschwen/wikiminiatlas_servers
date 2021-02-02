@@ -79,31 +79,41 @@ step_page = 20000
 min_page = global_min_page
 max_page = min_page + step_page
 last_geo = None
+sleep = 5
 
 log.write("<ul>")
 
 while min_page <= global_max_page:
     #  get existing pages from user DB (not for commons)
-    if lang != 'commons':
-        with tdb.cursor() as tcr:
-            query = 'SELECT page_id, page_title FROM page_' + lang + ' WHERE page_id >= %d AND page_id < %d' % (min_page, max_page)
-            tcr.execute(query)
-            rows = tcr.fetchall()
-        pages = {row[0]: row[1] for row in rows}
+    try:
+        if lang != 'commons':
+            with tdb.cursor() as tcr:
+                query = 'SELECT page_id, page_title FROM page_' + lang + ' WHERE page_id >= %d AND page_id < %d' % (min_page, max_page)
+                tcr.execute(query)
+                rows = tcr.fetchall()
+            pages = {row[0]: row[1] for row in rows}
 
-    # get data for extracting coordinates
-    if lang == 'commons':
-        query = "SELECT page_id, page_title, img_size, SUBSTRING(el_to, POSITION('geohack.php' IN el_to) + 12) AS params, img_width, img_height, GROUP_CONCAT( DISTINCT cl_to SEPARATOR '|') "\
-                "FROM externallinks, image, page LEFT JOIN categorylinks ON cl_from = page_id "\
-                "WHERE page_namespace=6 AND page_id >= %s AND page_id < %s AND img_name = page_title AND el_from = page_id AND el_to LIKE '%%geohack.php?%%' "\
-                "GROUP BY page_id "\
-                "HAVING LENGTH(params)>8"
-    else:
-        query = "SELECT page_id, page_title, page_len, SUBSTRING(el_to, POSITION('geohack.php' IN el_to) + 12) AS params "\
-                "FROM externallinks, page "\
-                "WHERE page_namespace=0 AND page_id >= %s AND page_id < %s AND el_from = page_id AND el_to LIKE '%%geohack.php?%%' "\
-                "HAVING LENGTH(params)>8"
-    ccr.execute(query, (min_page, max_page))
+        # get data for extracting coordinates
+        if lang == 'commons':
+            query = "SELECT page_id, page_title, img_size, SUBSTRING(el_to, POSITION('geohack.php' IN el_to) + 12) AS params, img_width, img_height, GROUP_CONCAT( DISTINCT cl_to SEPARATOR '|') "\
+                    "FROM externallinks, image, page LEFT JOIN categorylinks ON cl_from = page_id "\
+                    "WHERE page_namespace=6 AND page_id >= %s AND page_id < %s AND img_name = page_title AND el_from = page_id AND el_to LIKE '%%geohack.php?%%' "\
+                    "GROUP BY page_id "\
+                    "HAVING LENGTH(params)>8"
+        else:
+            query = "SELECT page_id, page_title, page_len, SUBSTRING(el_to, POSITION('geohack.php' IN el_to) + 12) AS params "\
+                    "FROM externallinks, page "\
+                    "WHERE page_namespace=0 AND page_id >= %s AND page_id < %s AND el_from = page_id AND el_to LIKE '%%geohack.php?%%' "\
+                    "HAVING LENGTH(params)>8"
+        ccr.execute(query, (min_page, max_page))
+        sleep = 5
+    except Exception as e:
+        sleep *= 2
+        print("Query failed, retrying in %d s..." % sleep)
+        print(str(e))
+        log.write("<li>Query failure, retrying in %d s... <!-- %s --></li>" % (sleep, str(e)))
+        time.sleep(sleep)
+        continue
 
     page_batch = []
     coord_dict = {}
@@ -194,7 +204,8 @@ while min_page <= global_max_page:
         n_tot += 1
 
         if n_tot % 1000 == 0:
-            print("%d rows processed, %d pages inserted, %d coords skipped, %d coords unparsable" % (n_tot, n_ins, n_skip, n_fail))
+            now = time.time()
+            print("%d rows processed, %d pages inserted, %d coords skipped, %d coords unparsable. %.2f items/s" % (n_tot, n_ins, n_skip, n_fail, n_tot/(now-start_time) ))
 
     # batch insert pages
     if lang != 'commons':
