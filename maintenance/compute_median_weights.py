@@ -28,7 +28,7 @@ for lang in lang_list:
     # For zoom levels 0-8 we suppress all labels with a weight below the median
     for z in range(9):
         with tdb.cursor() as tcr:
-            query = 'select count(*) from wma_connect_' + lang + ' c, wma_label_' + lang + ' l, wma_tile t WHERE l.id=c.label_id AND c.tile_id=t.id AND z=%s'
+            query = 'select weight from wma_connect_' + lang + ' c, wma_label_' + lang + ' l, wma_tile t WHERE l.id=c.label_id AND c.tile_id=t.id AND z=%s'
             tcr.execute(query, z)
             rows = [i[0] for i in tcr.fetchall()]
 
