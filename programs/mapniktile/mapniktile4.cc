@@ -50,9 +50,14 @@
 
 const char *osm_dbname = "gis";
 const char *osm_dbuser = "osm";
+const char *osm_dbhost = "osm.db.svc.eqiad.wmflabs";
+const char *osm_dbport = "5432";
 
 const unsigned int sleep_max = 1000;
 unsigned int sleep_t = 0;
+
+// line thickness scaling factor
+double thickfac = 2.0;
 
 using namespace mapnik;
 
@@ -62,15 +67,10 @@ polygon_symbolizer my_poly(color c) {
   return ps;
 }
 
-line_symbolizer my_line(color c) {
+line_symbolizer my_line(color c, double width = 1.0) {
   line_symbolizer ls;
   put(ls, keys::stroke, c);
-  return ls;
-}
-
-line_symbolizer my_line(color c, double width) {
-  line_symbolizer ls = my_line(c);
-  put(ls, keys::stroke_width, width);
+  put(ls, keys::stroke_width, width * thickfac);
   return ls;
 }
 
@@ -82,16 +82,16 @@ int main(int argc, char **argv) {
   if (argc == 5 || argc == 2)
     zoom = atoi(argv[1]);
 
-  double thickfac = 1.0;
   if (zoom >= 6 && zoom < 11)
-    thickfac = 1.5 / (12.0 - double(zoom));
+    thickfac *= 1.5 / (12.0 - double(zoom));
 
   std::string plugins_dir = MAPNIK_PLUGINS;
   datasource_cache::instance().register_datasources(plugins_dir);
   freetype_engine::register_font(
       "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf");
 
-  Map m(128, 128);
+  // for hidpi displays we prepare 2x tiles
+  Map m(256, 256);
 
   // (1.0,1.0,0.816) land =
   // (0.62,0.78,0.953) water =
@@ -412,7 +412,7 @@ int main(int argc, char **argv) {
   //
   feature_type_style roads3_style_1;
   rule roads3_rule_1;
-  auto roads3_rule_stk_1 = my_line(color(168, 168, 168), 2.0 * thickfac);
+  auto roads3_rule_stk_1 = my_line(color(168, 168, 168), 2.0);
   put(roads3_rule_stk_1, keys::stroke_linecap, ROUND_CAP);
   put(roads3_rule_stk_1, keys::stroke_linejoin, ROUND_JOIN);
   roads3_rule_1.append(roads3_rule_stk_1);
@@ -421,7 +421,7 @@ int main(int argc, char **argv) {
 
   feature_type_style roads3_style_2;
   rule roads3_rule_2;
-  auto roads3_rule_stk_2 = my_line(color(208, 208, 208), 1.0 * thickfac);
+  auto roads3_rule_stk_2 = my_line(color(208, 208, 208), 1.0);
   put(roads3_rule_stk_2, keys::stroke_linecap, ROUND_CAP);
   put(roads3_rule_stk_2, keys::stroke_linejoin, ROUND_JOIN);
   roads3_rule_2.append(roads3_rule_stk_2);
@@ -433,7 +433,7 @@ int main(int argc, char **argv) {
   //
   feature_type_style trails_style_1;
   rule trails_rule_1;
-  auto trails_rule_stk_1 = my_line(color(200, 200, 200), 3.5 * thickfac);
+  auto trails_rule_stk_1 = my_line(color(200, 200, 200), 3.5);
   put(trails_rule_stk_1, keys::stroke_linecap, ROUND_CAP);
   put(trails_rule_stk_1, keys::stroke_linejoin, ROUND_JOIN);
   trails_rule_1.append(trails_rule_stk_1);
@@ -442,7 +442,7 @@ int main(int argc, char **argv) {
 
   feature_type_style trails_style_2;
   rule trails_rule_2;
-  auto trails_rule_stk_2 = my_line(color(255, 255, 255), 1.5 * thickfac);
+  auto trails_rule_stk_2 = my_line(color(255, 255, 255), 1.5);
   put(trails_rule_stk_2, keys::stroke_linecap, ROUND_CAP);
   put(trails_rule_stk_2, keys::stroke_linejoin, ROUND_JOIN);
   trails_rule_2.append(trails_rule_stk_2);
@@ -454,7 +454,7 @@ int main(int argc, char **argv) {
   //
   feature_type_style roads2_style_1;
   rule roads2_rule_1;
-  auto roads2_rule_stk_1 = my_line(color(171, 158, 137), 4.5 * thickfac);
+  auto roads2_rule_stk_1 = my_line(color(171, 158, 137), 4.5);
   put(roads2_rule_stk_1, keys::stroke_linecap, ROUND_CAP);
   put(roads2_rule_stk_1, keys::stroke_linejoin, ROUND_JOIN);
   roads2_rule_1.append(roads2_rule_stk_1);
@@ -463,7 +463,7 @@ int main(int argc, char **argv) {
 
   feature_type_style roads2_style_2;
   rule roads2_rule_2;
-  auto roads2_rule_stk_2 = my_line(color(255, 250, 115), 2.5 * thickfac);
+  auto roads2_rule_stk_2 = my_line(color(255, 250, 115), 2.5);
   put(roads2_rule_stk_2, keys::stroke_linecap, ROUND_CAP);
   put(roads2_rule_stk_2, keys::stroke_linejoin, ROUND_JOIN);
   roads2_rule_2.append(roads2_rule_stk_2);
@@ -475,7 +475,7 @@ int main(int argc, char **argv) {
   //
   feature_type_style roads1_style_1;
   rule roads1_rule_1;
-  auto roads1_rule_stk_1 = my_line(color(188, 149, 28), 4.5 * thickfac);
+  auto roads1_rule_stk_1 = my_line(color(188, 149, 28), 4.5);
   put(roads1_rule_stk_1, keys::stroke_linecap, ROUND_CAP);
   put(roads1_rule_stk_1, keys::stroke_linejoin, ROUND_JOIN);
   roads1_rule_1.append(roads1_rule_stk_1);
@@ -484,7 +484,7 @@ int main(int argc, char **argv) {
 
   feature_type_style roads1_style_2;
   rule roads1_rule_2;
-  auto roads1_rule_stk_2 = my_line(color(242, 191, 36), 2.5 * thickfac);
+  auto roads1_rule_stk_2 = my_line(color(242, 191, 36), 2.5);
   put(roads1_rule_stk_2, keys::stroke_linecap, ROUND_CAP);
   put(roads1_rule_stk_2, keys::stroke_linejoin, ROUND_JOIN);
   roads1_rule_2.append(roads1_rule_stk_2);
