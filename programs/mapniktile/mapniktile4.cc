@@ -823,7 +823,7 @@ int main(int argc, char **argv)
   }
 
   // Medium roads
-  if (zoom >= 7)
+  if (zoom >= 6)
   {
     parameters p;
     p["type"] = "postgis";

@@ -21,6 +21,9 @@ lang_path = os.path.join(os.path.dirname(__file__), 'languages.dat')
 with open(lang_path) as lang_file:
     lang_list = [i.rstrip('\n') for i in lang_file.readlines()]
 
+# for now only commons uses this
+lang_list = ['commons']
+
 medians = {}
 for lang in lang_list:
     levels = []
