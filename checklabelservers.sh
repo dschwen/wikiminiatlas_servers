@@ -40,14 +40,14 @@ then
 	    TGPID=`cat /tmp/wikiminiatlas.tile${zoom}.pid`
 	    TGEXE=`pargs ${TGPID} | head -n1 | cut -f2 | cut -d' ' -f1`
 	  fi
-	  if [ "$TGEXE" = "/home/dschwen/wma/programs/mapniktile/mapniktile3" ]
+	  if [ "$TGEXE" = "/home/dschwen/wma/programs/mapniktile/mapniktile4" ]
 	  then
 	    date > /tmp/wikiminiatlas.lastchecked
 	  else
             date
 	    echo starting tileserver for zoom $zoom
-	    pushd /home/dschwen/public_html/wma/tiles
-	    nohup /home/dschwen/wma/programs/mapniktile/mapniktile3 $zoom > /home/dschwen/wma/log/mapnik.log.$zoom.`hostname` &
+	    pushd /var/www/wikiminiatlas/tiles
+	    nohup /home/dschwen/wma/wikiminiatlas_servers/programs/mapniktile/mapniktile4 $zoom > /home/dschwen/wma/log/mapnik.log.$zoom.`hostname` &
 	    popd
 	  fi
 	done
@@ -56,23 +56,23 @@ then
         # new satellite data fetcher/scaler
         #
 
-        TGFIL="/tmp/wikiminiatlas.sat.pid"
-        TGEXE='none'
-	if [ -e $TGFIL ]
-	then
-	  TGPID=`cat /tmp/wikiminiatlas.sat.pid`
-	  TGEXE=`pargs ${TGPID} | head -n1 | cut -f2 | cut -d' ' -f1`
-	fi
-	if [ "$TGEXE" = "/home/dschwen/wma/programs/satscaler/satscale" ]
-	then
-	  date > /tmp/wikiminiatlas.lastchecked
-	else
-          date
-	  echo starting satellite rescaling tileserver
-	  pushd /home/dschwen/public_html/wma/tiles
-	  nohup /home/dschwen/wma/programs/satscaler/satscale > /home/dschwen/wma/log/mapnik.sat.log.`hostname` &
-	  popd
-	fi
+#        TGFIL="/tmp/wikiminiatlas.sat.pid"
+#        TGEXE='none'
+#	if [ -e $TGFIL ]
+#	then
+#	  TGPID=`cat /tmp/wikiminiatlas.sat.pid`
+#	  TGEXE=`pargs ${TGPID} | head -n1 | cut -f2 | cut -d' ' -f1`
+#	fi
+#	if [ "$TGEXE" = "/home/dschwen/wma/programs/satscaler/satscale" ]
+#	then
+#	  date > /tmp/wikiminiatlas.lastchecked
+#	else
+#          date
+#	  echo starting satellite rescaling tileserver
+#	  pushd /home/dschwen/public_html/wma/tiles
+#	  nohup /home/dschwen/wma/programs/satscaler/satscale > /home/dschwen/wma/log/mapnik.sat.log.`hostname` &
+#	  popd
+#	fi
 
 	: > $LOCK
 else
