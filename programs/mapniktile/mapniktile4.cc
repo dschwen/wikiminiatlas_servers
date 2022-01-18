@@ -55,7 +55,7 @@ const char *osm_dbuser = "osm";
 const char *osm_dbhost = "localhost";
 const char *osm_dbport = "4444";
 #else
-const char *osm_dbhost = "osm.db.svc.eqiad.wmflabs";
+const char *osm_dbhost = "osmdb.eqiad.wmnet";
 const char *osm_dbport = "5432";
 #endif
 
@@ -392,7 +392,7 @@ int main(int argc, char **argv)
   {
     dash_array dash;
     dash.emplace_back(3, 3);
-    put(ferry_stk, keys::stroke_dasharray, dash);
+    put(raillines_stk, keys::stroke_dasharray, dash);
   }
   raillines_rule.append(my_line(color(100, 100, 100), 2.0));
   raillines_rule.append(raillines_stk);
