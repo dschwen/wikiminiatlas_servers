@@ -1,0 +1,17 @@
+[Unit]
+Description=WikiMiniAtlas Mapnik Tile Server - Zoom Level ${LEVEL}
+After=network.target
+
+[Service]
+ExecStart=/usr/local/bin/mapniktile4 ${LEVEL}
+WorkingDirectory=/var/www/wikiminiatlas/tiles
+User=www-data
+Group=www-data
+KillMode=process
+Restart=on-failure
+RestartPreventExitStatus=255
+
+[Install]
+WantedBy=multi-user.target
+Alias=wma-mapnik-${LEVEL}.service
+
