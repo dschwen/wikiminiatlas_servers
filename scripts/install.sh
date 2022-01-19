@@ -1,5 +1,8 @@
 #!/bin/bash
 
+sudo mkdir -p /var/run/wma
+sudo chown www-data:www-data /var/run/wma
+
 for LEVEL in 8 9 10 11 12
 do
   svc=wma-mapnik-${LEVEL}.service
@@ -15,5 +18,3 @@ do
   echo check with: sudo journalctl -e -u $svc
 done
 
-sudo mkdir i-p /var/run/wma
-sudo chown www-data:www-data /var/run/wma
