@@ -15,3 +15,5 @@ do
   echo check with: sudo journalctl -e -u $svc
 done
 
+sudo mkdir i-p /var/run/wma
+sudo chown www-data:www-data /var/run/wma

@@ -892,12 +892,12 @@ int main(int argc, char **argv)
     //
     // write the pid to check up on the process later
     //
-    sprintf(filename, "/tmp/wikiminiatlas.tile%d.pid", z);
+    sprintf(filename, "/var/run/wma/wikiminiatlas.tile%d.pid", z);
     fp = fopen(filename, "wt");
     fprintf(fp, "%d", getpid());
     fclose(fp);
 
-    sprintf(filename, "/tmp/wikiminiatlas.tile%d.fifo", z);
+    sprintf(filename, "/var/run/wma/wikiminiatlas.tile%d.fifo", z);
 
     /* Create the FIFO if it does not exist */
     umask(0);
