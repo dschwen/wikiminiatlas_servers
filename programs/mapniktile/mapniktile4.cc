@@ -892,17 +892,24 @@ int main(int argc, char **argv)
     //
     // write the pid to check up on the process later
     //
+    std::cout << "open file\n"; // debug
     sprintf(filename, "/var/run/wma/wikiminiatlas.tile%d.pid", z);
+    std::cout << "0\n"; // debug
     fp = fopen(filename, "wt");
+    std::cout << "a\n"; // debug
     fprintf(fp, "%d", getpid());
+    std::cout << "1\n"; // debug
     fclose(fp);
+    std::cout << "2\n"; // debug
 
     sprintf(filename, "/var/run/wma/wikiminiatlas.tile%d.fifo", z);
 
+    std::cout << "3\n"; // debug
     /* Create the FIFO if it does not exist */
     umask(0);
     mknod(filename, S_IFIFO | 0666, 0);
 
+    std::cout << "4\n"; // debug
     std::cout << "Entering fifo command mode for zoom=" << argv[1] << std::endl;
     fp = fopen(filename, "r");
     while (1)
