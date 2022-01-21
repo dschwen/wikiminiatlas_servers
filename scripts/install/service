@@ -1,0 +1,7 @@
+#!/bin/bash
+
+for lvl in 8 9 10 11 12
+do
+  sudo systemctl $1 wma-mapnik-${lvl}.service
+done
+
