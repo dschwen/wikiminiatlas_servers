@@ -3,6 +3,9 @@
 sudo mkdir -p /var/run/wma
 sudo chown www-data:www-data /var/run/wma
 
+mkdir ~/bin
+cp -a service ~/bin
+
 for LEVEL in 8 9 10 11 12
 do
   svc=wma-mapnik-${LEVEL}.service

@@ -37,6 +37,7 @@
 #include <mapnik/symbolizer.hpp>
 
 #include <iostream>
+#include <fstream>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -886,83 +887,80 @@ int main(int argc, char **argv)
   {
     int z = zoom, x, y;
     FILE *fp, *dfp;
-    char readbuf[800];
-    char filename[1024], tilefile[1024];
+    std::string filename, tilefile;
+
+    std::string z_str = std::to_string(z);
 
     //
     // write the pid to check up on the process later
     //
-    std::cout << "open file\n"; // debug
-    sprintf(filename, "/var/run/wma/wikiminiatlas.tile%d.pid", z);
-    std::cout << "0\n"; // debug
-    fp = fopen(filename, "wt");
-    std::cout << "a\n"; // debug
+    filename = "/var/run/wma/wikiminiatlas.tile" + std::to_string(z) + ".pid";
+    fp = fopen(filename.c_str(), "wt");
     fprintf(fp, "%d", getpid());
-    std::cout << "1\n"; // debug
     fclose(fp);
-    std::cout << "2\n"; // debug
 
-    sprintf(filename, "/var/run/wma/wikiminiatlas.tile%d.fifo", z);
+    filename = "/var/run/wma/wikiminiatlas.tile" + std::to_string(z) + ".fifo";
 
-    std::cout << "3\n"; // debug
     /* Create the FIFO if it does not exist */
     umask(0);
-    mknod(filename, S_IFIFO | 0666, 0);
+    mknod(filename.c_str(), S_IFIFO | 0666, 0);
 
-    std::cout << "4\n"; // debug
     std::cout << "Entering fifo command mode for zoom=" << argv[1] << std::endl;
-    fp = fopen(filename, "r");
+    std::ifstream pipe;
     while (1)
     {
-      if (fgets(readbuf, 800, fp) != 0)
+      std::string line;
+
+      pipe.open(filename, std::ifstream::in);
+      std::cout << "opened\n";
+      while(std::getline(pipe, line))
       {
-        if (sscanf(readbuf, "%d %d", &x, &y) == 2)
+        std::stringstream ss(line);
+        if ((ss >> x >> y).fail())
         {
-          if (z >= 7)
-            sprintf(tilefile, "mapnik/%d/%d/tile_%d_%d.png", z, y, y, x);
-          else
-            sprintf(tilefile, "mapnik/%d/tile_%d_%d.png", z, y, x);
-
-          std::cout << "Received location y=" << y << ", x=" << x << ", fname=" << tilefile << std::endl;
-
-          // maybe this request was already in the queue and has been fulfilled
-          dfp = fopen(tilefile, "r");
-          if (dfp)
-          {
-            // exists
-            fclose(dfp);
-            std::cout << "already created file " << tilefile << std::endl;
-            continue;
-          }
-
-          // doesnt exist
-          if (x >= 3 * (1 << z))
-            xx = x - 6 * (1 << z);
-          else
-            xx = x;
-
-          bx1 = xx * 60.0 / (1 << z);
-          by1 = 90.0 - (((y + 1.0) * 60.0) / (1 << z));
-          bx2 = (xx + 1) * 60.0 / (1 << z);
-          by2 = 90.0 - ((y * 60.0) / (1 << z));
-
-          m.zoom_to_box(box2d<double>(bx1, by1, bx2, by2));
-
-          agg_renderer<image_rgba8> ren(m, buf);
-          ren.apply();
-
-          save_to_file(buf, tilefile, "png");
+          std::cout << "Invalid command line: '" << line << "'\n";
+          continue;
         }
-        else
-          break;
-        sleep_t = 0;
-      }
-      else if (sleep_t < sleep_max)
-        sleep_t++;
+        std::string x_str = std::to_string(x);
+        std::string y_str = std::to_string(y);
 
-      usleep(sleep_t);
+        tilefile = "mapnik/" + z_str + "/";
+        if (z >= 7)
+          tilefile += y_str + "/";
+        tilefile += y_str + "_" + x_str + ".png";
+
+        std::cout << "Received location y=" << y << ", x=" << x << ", fname=" << tilefile << std::endl;
+
+        // maybe this request was already in the queue and has been fulfilled
+        dfp = fopen(tilefile.c_str(), "r");
+        if (dfp)
+        {
+          // exists
+          fclose(dfp);
+          std::cout << "already created file " << tilefile << std::endl;
+          continue;
+        }
+
+        // doesnt exist
+        if (x >= 3 * (1 << z))
+          xx = x - 6 * (1 << z);
+        else
+          xx = x;
+
+        bx1 = xx * 60.0 / (1 << z);
+        by1 = 90.0 - (((y + 1.0) * 60.0) / (1 << z));
+        bx2 = (xx + 1) * 60.0 / (1 << z);
+        by2 = 90.0 - ((y * 60.0) / (1 << z));
+
+        m.zoom_to_box(box2d<double>(bx1, by1, bx2, by2));
+
+        agg_renderer<image_rgba8> ren(m, buf);
+        ren.apply();
+
+        save_to_file(buf, tilefile.c_str(), "png");
+      }
+      pipe.close();
     }
-    fclose(fp);
 
     return EXIT_SUCCESS;
   }
