@@ -6,7 +6,7 @@ Renders a PNG image that shows the spatial distribution of already rendered tile
 ## Prerequisites
 
 ```
-sudo apt install python3-numpy python3-matplotlib
+sudo apt install python3-numpy python3-matplotlib imagemagick
 ```
 
 add
