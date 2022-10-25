@@ -38,6 +38,8 @@
 
 #include <iostream>
 #include <fstream>
+#include <string>
+#include <map>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -50,15 +52,20 @@
 #endif
 
 const char *osm_dbname = "gis";
-const char *osm_dbuser = "osm";
 
 #ifdef DEBUGPOSTGIS
+const char *osm_dbuser = "osm";
 const char *osm_dbhost = "localhost";
 const char *osm_dbport = "4444";
 #else
-const char *osm_dbhost = "osmdb.eqiad.wmnet";
+//const char *osm_dbuser = "osm";
+//const char *osm_dbhost = "osmdb.eqiad.wmnet";
+//const char *osm_dbport = "5432";
+const char *osm_dbuser = "osm_dschwen";
+const char *osm_dbhost = "maps-osmdb";
 const char *osm_dbport = "5432";
 #endif
+
 
 const unsigned int sleep_max = 1000;
 unsigned int sleep_t = 0;
@@ -99,6 +106,28 @@ int main(int argc, char **argv)
     std::cout << argv[0] << " z y x file.png - Render tile with the indices x,y,z into file.png\n";
     return EXIT_SUCCESS;
   }
+
+  // read the database connection config
+  std::ifstream in("/var/www/postgres.cnf");
+  std::map<std::string, std::string> osm_conf;
+  while (in) {
+    char rline[256];
+    in.getline(rline, 256);
+    std::string line(rline);
+
+    auto eq = line.find_first_of('=');
+    if (eq == std::string::npos)
+      continue;
+    std::string key = line.substr(0, eq);
+
+    auto q1 = line.find_first_of('\'');
+    auto q2 = line.find_last_of('\'');
+
+    std::string value = line.substr(q1+1, q2-q1-1);
+
+    osm_conf[key] = value;
+  }
+
 
   if (zoom >= 6 && zoom < 11)
     thickfac *= 1.5 / (12.0 - double(zoom));
@@ -590,8 +619,8 @@ int main(int argc, char **argv)
     p["host"] = osm_dbhost;
     p["port"] = osm_dbport;
     p["dbname"] = osm_dbname;
-    p["user"] = osm_dbuser;
-    p["password"] = "";
+    p["user"] = osm_conf["user"];
+    p["password"] = osm_conf["password"];
     p["estimate_extent"] = "false";
     p["extent"] = "-20037508,-19929239,20037508,19929239";
     p["table"] = "(SELECT way, waterway, \"natural\" from planet_osm_polygon where ( "
@@ -640,8 +669,8 @@ int main(int argc, char **argv)
     p["host"] = osm_dbhost;
     p["port"] = osm_dbport;
     p["dbname"] = osm_dbname;
-    p["user"] = osm_dbuser;
-    p["password"] = "";
+     p["user"] = osm_conf["user"];
+    p["password"] = osm_conf["password"];
     p["estimate_extent"] = "false";
     p["extent"] = "-20037508,-19929239,20037508,19929239";
     p["table"] = "(SELECT way, landuse,leisure from planet_osm_polygon where landuse in "
@@ -682,8 +711,8 @@ int main(int argc, char **argv)
     p["host"] = osm_dbhost;
     p["port"] = osm_dbport;
     p["dbname"] = osm_dbname;
-    p["user"] = osm_dbuser;
-    p["password"] = "";
+    p["user"] = osm_conf["user"];
+    p["password"] = osm_conf["password"];
     p["estimate_extent"] = "false";
     p["extent"] = "-20037508,-19929239,20037508,19929239";
     p["table"] = "(SELECT way,waterway from planet_osm_line where waterway in "
@@ -734,8 +763,8 @@ int main(int argc, char **argv)
     p["host"] = osm_dbhost;
     p["port"] = osm_dbport;
     p["dbname"] = osm_dbname;
-    p["user"] = osm_dbuser;
-    p["password"] = "";
+    p["user"] = osm_conf["user"];
+    p["password"] = osm_conf["password"];
     p["estimate_extent"] = "false";
     p["extent"] = "-20037508,-19929239,20037508,19929239";
     p["table"] = "(SELECT way,route from planet_osm_line where route in "
@@ -758,8 +787,8 @@ int main(int argc, char **argv)
     p["host"] = osm_dbhost;
     p["port"] = osm_dbport;
     p["dbname"] = osm_dbname;
-    p["user"] = osm_dbuser;
-    p["password"] = "";
+    p["user"] = osm_conf["user"];
+    p["password"] = osm_conf["password"];
     p["estimate_extent"] = "false";
     p["extent"] = "-20037508,-19929239,20037508,19929239";
     p["table"] = "(SELECT way,railway from planet_osm_line where railway in "
@@ -782,8 +811,8 @@ int main(int argc, char **argv)
     p["host"] = osm_dbhost;
     p["port"] = osm_dbport;
     p["dbname"] = osm_dbname;
-    p["user"] = osm_dbuser;
-    p["password"] = "";
+    p["user"] = osm_conf["user"];
+    p["password"] = osm_conf["password"];
     p["estimate_extent"] = "false";
     p["extent"] = "-20037508,-19929239,20037508,19929239";
     p["table"] = "(SELECT * from planet_osm_line where highway in "
@@ -806,8 +835,8 @@ int main(int argc, char **argv)
     p["host"] = osm_dbhost;
     p["port"] = osm_dbport;
     p["dbname"] = osm_dbname;
-    p["user"] = osm_dbuser;
-    p["password"] = "";
+    p["user"] = osm_conf["user"];
+    p["password"] = osm_conf["password"];
     p["estimate_extent"] = "false";
     p["extent"] = "-20037508,-19929239,20037508,19929239";
     p["table"] = "(SELECT way from planet_osm_line where highway in "
@@ -831,8 +860,8 @@ int main(int argc, char **argv)
     p["host"] = osm_dbhost;
     p["port"] = osm_dbport;
     p["dbname"] = osm_dbname;
-    p["user"] = osm_dbuser;
-    p["password"] = "";
+    p["user"] = osm_conf["user"];
+    p["password"] = osm_conf["password"];
     p["estimate_extent"] = "false";
     p["extent"] = "-20037508,-19929239,20037508,19929239";
     p["table"] = "(SELECT way from planet_osm_line where highway in "
@@ -855,8 +884,8 @@ int main(int argc, char **argv)
     p["host"] = osm_dbhost;
     p["port"] = osm_dbport;
     p["dbname"] = osm_dbname;
-    p["user"] = osm_dbuser;
-    p["password"] = "";
+    p["user"] = osm_conf["user"];
+    p["password"] = osm_conf["password"];
     p["estimate_extent"] = "false";
     p["extent"] = "-20037508,-19929239,20037508,19929239";
     p["table"] = "(SELECT way from planet_osm_roads where highway in "
@@ -896,6 +925,10 @@ int main(int argc, char **argv)
     //
     filename = "/var/run/wma/wikiminiatlas.tile" + std::to_string(z) + ".pid";
     fp = fopen(filename.c_str(), "wt");
+    if (!fp) {
+      std::cout << "Unable to open pid file '" << filename << "'\n";
+      return 1;
+    }
     fprintf(fp, "%d", getpid());
     fclose(fp);
 
@@ -927,7 +960,7 @@ int main(int argc, char **argv)
         tilefile = "mapnik/" + z_str + "/";
         if (z >= 7)
           tilefile += y_str + "/";
-        tilefile += y_str + "_" + x_str + ".png";
+        tilefile += "tile_" + y_str + "_" + x_str + ".png";
 
         std::cout << "Received location y=" << y << ", x=" << x << ", fname=" << tilefile << std::endl;
 
@@ -989,7 +1022,11 @@ int main(int argc, char **argv)
     agg_renderer<image_rgba8> ren(m, buf);
     ren.apply();
 
-    save_to_file(buf, argv[4], "png");
+    try {
+      save_to_file(buf, argv[4], "png");
+    } catch (const std::exception& e) {
+      std::cerr << e.what();
+    }
 
     return EXIT_SUCCESS;
   }
