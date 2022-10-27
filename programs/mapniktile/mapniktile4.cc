@@ -549,12 +549,13 @@ int main(int argc, char **argv)
     // Coastlines from processed_p OSM
     parameters p;
     p["type"] = "shape";
-    p["file"] = "shp/osm/world_boundaries/processed_p";
+    p["file"] = "shp/landpoly_simple";
+    //p["file"] = "shp/osm/world_boundaries/processed_p";
 
     layer lyr("Coastlines");
     lyr.set_datasource(datasource_cache::instance().create(p));
-    lyr.set_srs("+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 "
-                "+x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +no_defs");
+    //lyr.set_srs("+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 "
+    //            "+x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +no_defs");
     lyr.add_style("landmass");
     m.add_layer(lyr);
   }
@@ -1039,7 +1040,7 @@ int main(int argc, char **argv)
     char base_dir[1024], tile_dir[1024], tile_file[1024];
 
     // make sure base dir exists
-    sprintf(base_dir, "%s/%d", argv[2], z);
+    snprintf(base_dir, 1024, "%s/%d", argv[2], z);
     if (stat(base_dir, &st) == -1)
       mkdir(base_dir, 0744);
 
@@ -1050,16 +1051,16 @@ int main(int argc, char **argv)
       if (z >= 7)
       {
         // make sure tile dir exists
-        sprintf(tile_dir, "%s/%d", base_dir, y);
+        snprintf(tile_dir, 1024, "%s/%d", base_dir, y);
         if (stat(tile_dir, &st) == -1)
           mkdir(tile_dir, 0744);
       }
       else
-        sprintf(tile_dir, "%s", base_dir);
+        snprintf(tile_dir, 1024, "%s", base_dir);
 
       for (int x = 0; x < 6 * (1 << z); x++)
       {
-        sprintf(tile_file, "%s/tile_%d_%d.png", tile_dir, y, x);
+        snprintf(tile_file, 1024, "%s/tile_%d_%d.png", tile_dir, y, x);
         std::cout << tile_file << std::endl;
 
         if (x >= 3 * (1 << z))
