@@ -261,7 +261,7 @@ int main(int argc, char **argv)
 
   feature_type_style tree2poly_style;
   rule tree2poly_rule;
-  tree2poly_rule.set_filter(parse_expression("[natural] = 'wood'"));
+  tree2poly_rule.set_filter(parse_expression("[natural] = 'wood' or [landuse] = 'forest'"));
   tree2poly_rule.append(my_poly(color(190, 240, 190)));
   tree2poly_style.add_rule(std::move(tree2poly_rule));
   m.insert_style("trees2", tree2poly_style);
