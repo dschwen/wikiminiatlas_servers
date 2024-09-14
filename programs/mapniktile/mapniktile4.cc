@@ -261,10 +261,17 @@ int main(int argc, char **argv)
 
   feature_type_style tree2poly_style;
   rule tree2poly_rule;
-  tree2poly_rule.set_filter(parse_expression("[natural] = 'wood' or [landuse] = 'forest'"));
+  tree2poly_rule.set_filter(parse_expression("[natural] = 'wood'"));
   tree2poly_rule.append(my_poly(color(190, 240, 190)));
   tree2poly_style.add_rule(std::move(tree2poly_rule));
   m.insert_style("trees2", tree2poly_style);
+
+  feature_type_style tree3poly_style;
+  rule tree3poly_rule;
+  tree3poly_rule.set_filter(parse_expression("[landuse] = 'forest'"));
+  tree3poly_rule.append(my_poly(color(150, 200, 150)));
+  tree3poly_style.add_rule(std::move(tree3poly_rule));
+  m.insert_style("trees3", tree3poly_style);
 
   // Landice (polygon)
   feature_type_style landice_style;
@@ -624,9 +631,9 @@ int main(int argc, char **argv)
     p["password"] = osm_conf["password"];
     p["estimate_extent"] = "false";
     p["extent"] = "-20037508,-19929239,20037508,19929239";
-    p["table"] = "(SELECT way, waterway, \"natural\" from planet_osm_polygon where ( "
+    p["table"] = "(SELECT way, waterway, \"natural\", landuse from planet_osm_polygon where ( "
                  "waterway in ('riverbank','dock') ) or ( \"natural\" in "
-                 "('water','bay','wetland','wood', 'grassland','fell') ) ) as foo";
+                 "('water','bay','wetland','wood', 'grassland','fell') ) or (landuse in ('forest') ) ) as foo";
 
     layer lyr("Natural");
     lyr.set_datasource(datasource_cache::instance().create(p));
@@ -634,7 +641,8 @@ int main(int argc, char **argv)
                 "+x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +no_defs");
     lyr.add_style("lakes2");
     lyr.add_style("swamp2");
-    lyr.add_style("woods2");
+    lyr.add_style("trees2");
+    lyr.add_style("trees3");
     lyr.add_style("grass2");
     m.add_layer(lyr);
   }
@@ -674,7 +682,7 @@ int main(int argc, char **argv)
     p["password"] = osm_conf["password"];
     p["estimate_extent"] = "false";
     p["extent"] = "-20037508,-19929239,20037508,19929239";
-    p["table"] = "(SELECT way, landuse,leisure from planet_osm_polygon where landuse in "
+    p["table"] = "(SELECT way, landuse, leisure from planet_osm_polygon where landuse in "
                  "('military','railway','commercial','industrial','residential','retail'"
                  ",'basin','salt_pond','orchard','cemetary','meadow','village_green','"
                  "forrest','recreation_ground') or leisure in "
