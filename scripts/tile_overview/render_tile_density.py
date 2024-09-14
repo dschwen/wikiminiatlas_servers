@@ -41,8 +41,11 @@ rootdir ='/volume/mapnik/%d' % z
 for root, subdirs, files in os.walk(rootdir) :
     for f in files :
         c = f[:-4].split("_")
-        x = int(c[2]) // n
-        y = int(c[1]) // n
-        count[y][x] += 1
+        try:
+            x = int(c[2]) // n
+            y = int(c[1]) // n
+            count[y][x] += 1
+        except:
+            print(f)
 
 plt.imsave("overview_%d.png" % z, count)
